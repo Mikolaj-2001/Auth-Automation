@@ -1,0 +1,147 @@
+name: Auth Workflow
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      artifact-name:
+        description: Name of the artifact to upload
+        required: true
+        default: build-artifacts/test-artifacts
+        type: string
+
+env:
+  MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
+  ARTIFACT_NAME: ${{ inputs.artifact-name || 'build-artifacts/test-artifacts' }}
+
+defaults:
+  run:
+    working-directory: auth-automation
+
+jobs:
+  build:
+    continue-on-error: true
+    environment: production
+    strategy:
+      matrix:
+        node-version: ["20", "22", "24"]
+        operating-system: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.operating-system }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: auth-automation/package-lock.json
+
+      - name: "Cache-dependencies"
+        uses: actions/cache@v3
+        with:
+          id: cache-dependencies
+          path: auth-automation/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('auth-automation/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Dependencies
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        run: npm ci
+        working-directory: auth-automation
+
+      - name: Build Project
+        run: npm run build
+        working-directory: auth-automation
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-${{ matrix.node-version }}
+          path: auth-automation/dist
+
+  test:
+    needs: build
+    environment: testing
+    env:
+      MONGODB_URI: mongodb://localhost:27017/${{ secrets.MONGO_DB_NAME }}
+      MONGODB_USER: ${{ secrets.MONGODB_USER }}
+      MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
+    runs-on: ubuntu-latest
+    container:
+      image: node:22
+      options: --user node
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: auth-automation/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: auth-automation
+
+      - name: Run Server
+        run: |
+          npm start &
+          npx --yes wait-on http://localhost:9800/${{env.MONGO_DB_NAME}} --timeout 60000
+        working-directory: auth-automation
+
+      - name: Run Tests
+        id: run-tests
+        run: npm test -- --json --outputFile=test-results/results.json
+        env:
+          BASE_URL: http://localhost:9800/${{env.MONGO_DB_NAME}}
+        working-directory: auth-automation
+
+      - name: Upload Test Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: auth-automation/test-results
+
+  deploy:
+    permissions:
+      id-token: write
+      contents: read
+    needs: test
+    environment: production
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: auth-automation
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}-ubuntu-latest-22
+          path: auth-automation/dist
+
+      - name: Deploy
+        run: echo "${{ needs.test.result }}"
+  failure-report:
+    needs: [test, deploy]
+    if: ${{ cancelled() || (needs.test.result == 'failure' || needs.deploy.result == 'failure') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report information
+        run: |
+          echo "Issue report referring to test and deploy failures"
+          echo "$GITHUB_STEP_SUMMARY"
