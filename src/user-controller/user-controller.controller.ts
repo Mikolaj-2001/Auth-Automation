@@ -20,6 +20,7 @@ import { AuthServiceService } from '../authentication/auth-service/auth-service.
 import { AuthConfigMiddleware } from '../auth-config-middelware/auth-config';
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
+import { LeakServiceGuard } from '../authLeakDetection/leak-service.guard';
 
 interface AuthRequest extends Request {
     user?: any;
@@ -44,6 +45,7 @@ export class UserControllerController {
     }
 
     @Post('register')
+    @UseGuards(LeakServiceGuard)
     async newRegistering(@Body() body: RegistrationBody, @Res() res: Response) {
         const { confirmPassword, password, userName, Surname, email, PersonalID } = body;
         // The password is never sent back to the view
@@ -95,10 +97,10 @@ export class UserControllerController {
         return {
             user: {
                 userName: '',
-                    Surname: '',
-                    email: '',
-                    PersonalID: ''
-                }
+                Surname: '',
+                email: '',
+                PersonalID: ''
+            }
         };
     }
 
@@ -113,6 +115,7 @@ export class UserControllerController {
     }
 
     @Post('login')
+    @UseGuards(LeakServiceGuard)
     async loginUser(
         @Body() userLoggingIn: UserLoggingIn,
         @Res() res: Response,
@@ -167,7 +170,7 @@ export class UserControllerController {
     }
 
     @Delete(':id')
-    @UseGuards(AuthConfigMiddleware)
+    @UseGuards(AuthConfigMiddleware, LeakServiceGuard)
     async deleteUser(
         @Param('id')
         id: string,

@@ -8,6 +8,7 @@ import { Types } from 'mongoose';
 import { IsMongoId, IsNumber } from 'class-validator';
 import { PickType } from '@nestjs/mapped-types';
 import { DataAuth } from '../../authData-schema/dataAuth.schema';
+import { LeakServiceGuard } from '../../authLeakDetection/leak-service.guard';
 
 @Controller('auth-controller')
 export class AuthControllerController { }
@@ -20,6 +21,7 @@ export class deleteSelectionDTO extends PickType(DataAuth, ['userAuthID', 'userI
 }
 
 @Controller('auth/user')
+@UseGuards(AuthConfigMiddleware, LeakServiceGuard)
 export class AuthController {
     constructor(private readonly authService: AuthServiceService,
         private readonly userService: UserServiceService,

@@ -14,6 +14,8 @@ import { PersonalIDService } from '../userDto/userRegistered.dto';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthConfigMiddleware } from '../auth-config-middelware/auth-config';
 import { AuthModule } from '../auth-module/auth-module.module';
+import { LeakServiceGuard } from '../authLeakDetection/leak-service.guard';
+
 
 @Module({
   imports: [
@@ -33,8 +35,8 @@ import { AuthModule } from '../auth-module/auth-module.module';
     forwardRef(() => AuthModule),
   ],
   // ConfigService pochodzi z globalnego ConfigModule, a User jest schematem, a nie providerem
-  providers: [UserServiceService, PersonalIDService],
-  exports: [UserServiceService, PersonalIDService, JwtModule],
+  providers: [UserServiceService, PersonalIDService, LeakServiceGuard],
+  exports: [UserServiceService, PersonalIDService, JwtModule, LeakServiceGuard],
 })
 export class UserModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

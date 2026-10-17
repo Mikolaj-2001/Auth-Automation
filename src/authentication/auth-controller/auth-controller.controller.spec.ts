@@ -34,6 +34,7 @@ describe('AuthController', () => {
       controllers: [AuthController],
       providers: [
         { provide: AuthServiceService, useValue: authService },
+        //  { provide: AuthService, useValue: authService },
         { provide: UserServiceService, useValue: userService },
       ],
     })

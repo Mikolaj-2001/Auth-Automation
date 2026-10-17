@@ -8,6 +8,7 @@ import { UserModule } from './user-module/userModule.module';
 import { AuthModule } from './auth-module/auth-module.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserControllerController } from './user-controller/user-controller.controller';
+import { LeakServiceGuard } from './authLeakDetection/leak-service.guard';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -19,6 +20,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     ConfigModule.forRoot({ isGlobal: true }),
   ],
   controllers: [AppController, UserControllerController],
-  providers: [AppService, UserServiceService],
+  providers: [AppService, UserServiceService, LeakServiceGuard],
+  exports: [LeakServiceGuard],
 })
 export class AppModule { }
