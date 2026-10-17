@@ -28,7 +28,7 @@ export class AuthServiceService {
     const authDocument = new this.dataAuthModel({
       userId: new Types.ObjectId(dto.userID),
       userAuthID: dto.userAuthID,
-      Name: dto.name,
+      name: dto.name,
       email: dto.email,
       userRefID: dto.userRefID,
     });
