@@ -45,7 +45,7 @@ export class DataAuth extends Document {
   @IsEmail()
   email!: string;
 
-  @Prop({ required: true, ref: 'User' })
+  @Prop({ required: true,unique: true, ref: 'User' })
   @IsNotEmpty()
   @IsString()
   userRefID!: string;
