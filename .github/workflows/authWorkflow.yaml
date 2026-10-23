@@ -59,12 +59,6 @@ jobs:
       - name: Build Project
         run: npm run build
 
-      - name: Push Prisma schema to database
-        if: github.ref == 'refs/heads/master'
-        run: npx prisma db push
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
       - name: "Publish JS filename"
         id: publishing
         run: node -e "const fs = require('node:fs'); const file = fs.readdirSync('dist').find((name) => name.endsWith('.js')); if (file) fs.appendFileSync(process.env.GITHUB_OUTPUT, 'script-file=' + file + require('node:os').EOL)";
