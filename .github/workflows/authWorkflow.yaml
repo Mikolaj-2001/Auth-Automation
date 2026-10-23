@@ -27,6 +27,13 @@ jobs:
         node-version: ["25", "26"]
         operating-system: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.operating-system }}
+    container:
+      image: node:25
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
     outputs:
       script-file: ${{ steps.publishing.outputs.script-file }}
     steps:
@@ -84,13 +91,6 @@ jobs:
       JWT_AUTH_TOKEN_EXPIRES_IN: 1h
       APP_PORT: 9800
     runs-on: ubuntu-latest
-    container:
-      image: node:25
-    services:
-      mongo:
-        image: mongo:7
-        ports:
-          - 27017:27017
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
