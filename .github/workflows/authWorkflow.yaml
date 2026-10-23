@@ -24,7 +24,7 @@ jobs:
     environment: production
     strategy:
       matrix:
-        node-version: ["20", "22", "24"]
+        node-version: ["25", "26"]
         operating-system: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.operating-system }}
     outputs:
@@ -78,14 +78,14 @@ jobs:
     needs: build
     environment: testing
     env:
-      MONGODB_URI: mongodb://mongo:27017/${{ secrets.MONGO_DB_NAME }}
+      MONGODB_URI: mongodb://localhost:27017/${{ secrets.MONGO_DB_NAME }}
       MONGODB_USER: ${{ secrets.MONGODB_USER }}
       JWT_AUTH_TOKEN: ${{ secrets.JWT_AUTH_TOKEN }}
       JWT_AUTH_TOKEN_EXPIRES_IN: 1h
-      PORT: 9800
+      APP_PORT: 9800
     runs-on: ubuntu-latest
     container:
-      image: node:22
+      image: node:25
     services:
       mongo:
         image: mongo:7
@@ -98,17 +98,20 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "25"
           cache: npm
           cache-dependency-path: package-lock.json
 
       - name: Install Dependencies
         run: npm ci
 
+      - name: Initialise Prisma Client
+        run: npx prisma generate
+
       - name: Run Server
         run: |
           npm start &
-          npx --yes wait-on http://localhost:9800 --timeout 60000 
+          npx --yes wait-on http://localhost:9800 --timeout 60000
 
       - name: Run Tests
         id: run-tests
@@ -134,7 +137,7 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.ARTIFACT_NAME }}-ubuntu-latest-22
+          name: ${{ env.ARTIFACT_NAME }}-ubuntu-latest-25
           path: dist
 
       - name: Output JS filenames

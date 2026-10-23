@@ -34,7 +34,7 @@ async function bootstrap() {
   hbs.registerHelper('uppercase', (str: string) => str.toUpperCase());
   hbs.registerHelper('lowercase', (str: string) => str.toLowerCase());
 
-  const port = process.env.PORT ?? 9800;
+  const port = process.env.APP_PORT ?? 9800;
   await app.listen(port);
   console.log('App has started successfully on port', port);
 
