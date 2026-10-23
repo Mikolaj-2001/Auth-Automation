@@ -1,0 +1,8 @@
+node_modules
+dist
+.git
+.github
+.agents
+.env
+*.tsbuildinfo
+npm-debug.log*

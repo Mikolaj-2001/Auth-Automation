@@ -1,5 +1,6 @@
 // Requires: `npx prisma generate`
 import { Prisma, PrismaClient } from '@prisma/client';
+import * as CryptoJs from 'crypto-js';
 
 const prisma = new PrismaClient();
 
@@ -49,6 +50,37 @@ export async function disconnectPrismaClient(): Promise<void> {
 export function getPrismaClient(): PrismaClient {
     return prisma;
 }
+
+export async function verifyInputEmail(userRefID: string, providedEmail: string): Promise<boolean> {
+    const user = await prisma.user.findUnique({
+        where: { userRefID: userRefID },
+        select: {//select oznacza, które pola chcemy pobrać z bazy danych
+            encryptionKey: true, email: true
+        },
+    });
+    if (!user || !user.encryptionKey) {
+        return false;
+    }
+    const decryptedEmail = CryptoJs.AES.decrypt(user.email, user.encryptionKey).toString(CryptoJs.enc.Utf8);
+    return decryptedEmail.length > 0 && decryptedEmail === providedEmail;
+}
+
+export async function verifyInputName(userRefID: string, providedName: string): Promise<boolean> {
+    const user = await prisma.user.findUnique({
+        where: {
+            userRefID: userRefID
+        },
+        select: {
+            encryptionKey: true, Name: true
+        }
+    });
+    if (!user || !user.encryptionKey) {
+        return false;
+    }
+    const decryptedName = CryptoJs.AES.decrypt(user.Name, user.encryptionKey).toString(CryptoJs.enc.Utf8);
+    return decryptedName.length > 0 && decryptedName === providedName;
+}
+
 
 export function getAllUsers() {
     return prisma.user.findMany({
@@ -132,7 +164,7 @@ export function findAuthByIdentifier(identifier: string) {
     });
 }
 
-export function createUser(data: UserCreateInput) {
+export async function createUser(data: UserCreateInput) {
     return prisma.user.create({
         data: {
             userName: data.userName,
@@ -146,7 +178,7 @@ export function createUser(data: UserCreateInput) {
     });
 }
 
-export function createAuth(data: AuthCreateInput) {
+export async function createAuth(data: AuthCreateInput) {
     return prisma.auth.create({
         data: {
             userAuthID: data.userAuthID,

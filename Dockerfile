@@ -1,29 +1,33 @@
 FROM node:22-alpine AS build
 
-WORKDIR /auth-automation
+RUN apk add --no-cache openssl
 
-COPY auth-automation/package.json auth-automation/package-lock.json ./
+WORKDIR /app
+
+COPY package.json package-lock.json ./
 
 RUN npm ci
 
-COPY auth-automation/ ./
+COPY . ./
 
-RUN npm run build
+RUN npx prisma generate && npm run build
 
 FROM node:22-alpine
 
+RUN apk add --no-cache openssl 
 ENV NODE_ENV=production \
     PORT=3000
 
-WORKDIR /auth-automation
+WORKDIR /app
 
-COPY auth-automation/package.json auth-automation/package-lock.json ./
+COPY package.json package-lock.json ./ 
 
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force 
 
-COPY --from=build /auth-automation/dist ./dist
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build /app/dist ./dist  
 
-COPY auth-automation/public ./public
+COPY public ./public
 
 USER node
 
