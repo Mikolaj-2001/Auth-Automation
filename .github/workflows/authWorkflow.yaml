@@ -18,10 +18,6 @@ env:
   MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
   ARTIFACT_NAME: ${{ inputs.artifact-name || 'build-artifacts/test-artifacts' }}
 
-defaults:
-  run:
-    working-directory: auth-automation
-
 jobs:
   build:
     continue-on-error: true
@@ -42,35 +38,33 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-          cache-dependency-path: auth-automation/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: "Cache-dependencies"
         uses: actions/cache@v3
         with:
           id: cache-dependencies
-          path: auth-automation/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('auth-automation/package-lock.json') }}
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       - name: Install Dependencies
         if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: npm ci
-        working-directory: auth-automation
 
       - name: Build Project
         run: npm run build
-        working-directory: auth-automation
 
       - name: "Publish JS filename"
         id: publishing
-        run: find dist/*.js -type f -execdir echo 'script-file={}' >> $GITHUB_OUTPUT ';'
+        run: node -e "const fs = require('node:fs'); const file = fs.readdirSync('dist').find((name) => name.endsWith('.js')); if (file) fs.appendFileSync(process.env.GITHUB_OUTPUT, 'script-file=' + file + require('node:os').EOL);"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-${{ matrix.node-version }}
-          path: auth-automation/dist
+          path: dist
 
   test:
     needs: build
@@ -97,31 +91,28 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: auth-automation/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install Dependencies
         run: npm ci
-        working-directory: auth-automation
 
       - name: Run Server
         run: |
           npm start &
           npx --yes wait-on http://localhost:9800/${{env.MONGO_DB_NAME}} --timeout 60000
-        working-directory: auth-automation
 
       - name: Run Tests
         id: run-tests
         run: npm test -- --json --outputFile=test-results/results.json
         env:
           BASE_URL: http://localhost:9800/${{env.MONGO_DB_NAME}}
-        working-directory: auth-automation
 
       - name: Upload Test Artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: test-artifacts
-          path: auth-automation/test-results
+          path: test-results
 
   deploy:
     permissions:
@@ -130,15 +121,12 @@ jobs:
     needs: test
     environment: production
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: auth-automation
     steps:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}-ubuntu-latest-22
-          path: auth-automation/dist
+          path: dist
 
       - name: Output JS filenames
         run: ls
