@@ -24,11 +24,11 @@ jobs:
     environment: production
     strategy:
       matrix:
-        node-version: ["25", "26"]
-        operating-system: [ubuntu-latest, windows-latest]
+        node-version: ["20", "26"]
+        operating-system: [ubuntu-latest, debian-latest]
     runs-on: ${{ matrix.operating-system }}
     container:
-      image: node:25
+      image: node:20
     services:
       mongo:
         image: mongo:7
@@ -98,7 +98,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "25"
+          node-version: "20"
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -137,7 +137,7 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.ARTIFACT_NAME }}-ubuntu-latest-25
+          name: ${{ env.ARTIFACT_NAME }}-${{matrix.operating-system}}-${{matrix.node-version}}
           path: dist
 
       - name: Output JS filenames
