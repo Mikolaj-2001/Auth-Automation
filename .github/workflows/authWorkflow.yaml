@@ -24,11 +24,11 @@ jobs:
     environment: production
     strategy:
       matrix:
-        node-version: ["20", "26"]
-        operating-system: [ubuntu-latest, debian-latest]
+        node-version: ["24", "26"]
+        operating-system: [ubuntu-latest, ubuntu-22.04]
     runs-on: ${{ matrix.operating-system }}
     container:
-      image: node:20
+      image: node:24
     services:
       mongo:
         image: mongo:7
@@ -70,7 +70,7 @@ jobs:
         if: github.ref == 'refs/heads/master'
         run: npx prisma db push
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.MONGODB_URI }}
 
       - name: "Publish JS filename"
         id: publishing
@@ -98,7 +98,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
           cache-dependency-path: package-lock.json
 
