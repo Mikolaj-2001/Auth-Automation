@@ -11,12 +11,12 @@ on:
       artifact-name:
         description: Name of the artifact to upload
         required: true
-        default: build-artifacts/test-artifacts
+        default: build-artifacts-test-artifacts
         type: string
 
 env:
   MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
-  ARTIFACT_NAME: ${{ inputs.artifact-name || 'build-artifacts/test-artifacts' }}
+  ARTIFACT_NAME: ${{ inputs.artifact-name || 'build-artifacts-test-artifacts' }}
 
 jobs:
   build:
@@ -38,14 +38,14 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-          cache-dependency-path: auth-automation/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Cache node_modules
         id: cache-dependencies
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('auth-automation/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-${{ matrix.node-version }}-
 
@@ -80,10 +80,12 @@ jobs:
     env:
       MONGODB_URI: mongodb://mongo:27017/${{ secrets.MONGO_DB_NAME }}
       MONGODB_USER: ${{ secrets.MONGODB_USER }}
+      JWT_AUTH_TOKEN: ${{ secrets.JWT_AUTH_TOKEN }}
+      JWT_AUTH_TOKEN_EXPIRES_IN: 1h
+      PORT: 9800
     runs-on: ubuntu-latest
     container:
       image: node:22
-      options: --user node
     services:
       mongo:
         image: mongo:7
@@ -98,24 +100,21 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: auth-automation/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install Dependencies
         run: npm ci
-        working-directory: auth-automation
 
       - name: Run Server
         run: |
           npm start &
-          npx --yes wait-on http://localhost:1200/${{env.MONGO_DB_NAME}} --timeout 60000
-        working-directory: auth-automation
+          npx --yes wait-on http://localhost:9800 --timeout 60000 
 
       - name: Run Tests
         id: run-tests
         run: npm test -- --json --outputFile=test-results/results.json
-        working-directory: auth-automation
         env:
-          BASE_URL: http://localhost:1200/${{env.MONGO_DB_NAME}}
+          BASE_URL: http://localhost:9800
 
       - name: Upload Test Artifacts
         if: failure()
@@ -128,7 +127,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    needs: test
+    needs: [build, test]
     environment: production
     runs-on: ubuntu-latest
     steps:
@@ -140,14 +139,12 @@ jobs:
 
       - name: Output JS filenames
         run: ls
-        working-directory: auth-automation/dist
 
       - name: Output the filename
         run: echo "${{needs.build.outputs.script-file}}"
 
       - name: Deploy
         run: echo "${{ needs.test.result }}"
-        working-directory: auth-automation
   failure-report:
     needs: [test, deploy]
     if: ${{ cancelled() || (needs.test.result == 'failure' || needs.deploy.result == 'failure') }}
