@@ -2,10 +2,10 @@ name: Auth Workflow
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
     inputs:
       artifact-name:
@@ -60,7 +60,7 @@ jobs:
         run: npm run build
 
       - name: Push Prisma schema to database
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
         run: npx prisma db push
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -78,9 +78,8 @@ jobs:
     needs: build
     environment: testing
     env:
-      MONGODB_URI: mongodb://localhost:27017/${{ secrets.MONGO_DB_NAME }}
+      MONGODB_URI: mongodb://mongo:27017/${{ secrets.MONGO_DB_NAME }}
       MONGODB_USER: ${{ secrets.MONGODB_USER }}
-      MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
     runs-on: ubuntu-latest
     container:
       image: node:22
@@ -108,7 +107,7 @@ jobs:
       - name: Run Server
         run: |
           npm start &
-          npx --yes wait-on http://localhost:9800/${{env.MONGO_DB_NAME}} --timeout 60000
+          npx --yes wait-on http://localhost:1200/${{env.MONGO_DB_NAME}} --timeout 60000
         working-directory: auth-automation
 
       - name: Run Tests
@@ -116,7 +115,7 @@ jobs:
         run: npm test -- --json --outputFile=test-results/results.json
         working-directory: auth-automation
         env:
-          BASE_URL: http://localhost:9800/${{env.MONGO_DB_NAME}}
+          BASE_URL: http://localhost:1200/${{env.MONGO_DB_NAME}}
 
       - name: Upload Test Artifacts
         if: failure()
