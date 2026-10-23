@@ -105,6 +105,9 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Initialise Prisma Client
+        run: npx prisma generate
+
       - name: Run Server
         run: |
           npm start &
