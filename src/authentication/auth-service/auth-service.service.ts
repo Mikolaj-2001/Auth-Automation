@@ -4,11 +4,11 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { UnauthorizedException } from '@nestjs/common';
-import { UserServiceService } from '../../../src/user-service/user-service.service';
-import { User } from '../../../src/user-schema/user.schema';
+import { UserServiceService } from '../../user-service/user-service.service';
+import { User } from '../../user-schema/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { DataAuth } from '../../../src/authData-schema/dataAuth.schema';
+import { DataAuth } from '../../authData-schema/dataAuth.schema';
 import { deleteSelectionDTO } from '../../authentication/auth-controller/auth-controller.controller';
 import { AuthCreateDto } from '../../authDto/authCreate.dto';
 

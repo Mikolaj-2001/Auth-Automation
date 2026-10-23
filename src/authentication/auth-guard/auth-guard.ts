@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AuthServiceService } from '../auth-service/auth-service.service';
-import { UserServiceService } from '../../../src/user-service/user-service.service';
+import { UserServiceService } from '../../user-service/user-service.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { User } from '../../user-schema/user.schema';
 
