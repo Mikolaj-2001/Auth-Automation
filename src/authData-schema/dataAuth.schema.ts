@@ -22,7 +22,7 @@ export class DataAuth extends Document {
     required: true,
     unique: true,
     min: 1_000_000_000_000_000,
-    max: 9_007_199_254_740_991,
+    max: 9_007_199_254_740_991,//max length is 16 digits
   })
   @IsNotEmpty()
   @IsInt()

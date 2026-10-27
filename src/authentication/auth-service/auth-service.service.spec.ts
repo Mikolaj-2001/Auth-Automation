@@ -11,7 +11,7 @@ import { DataAuth } from '../../authData-schema/dataAuth.schema';
 
 const VALID_ID = '507f1f77bcf86cd799439011';
 
-const execResolving = (value: unknown) => ({ exec: jest.fn().mockResolvedValue(value) });
+const execResolving = (value: unknown) => ({ exec: jest.fn().mockResolvedValue(value) });// helper to mock Mongoose exec() calls
 
 const makeUser = (email: string, password: string, extra: Record<string, unknown> = {}) => ({
   _id: VALID_ID,
@@ -237,7 +237,7 @@ describe('AuthServiceService', () => {
       configService.get.mockImplementation((key: string) =>
         key === 'JWT_AUTH_TOKEN_EXPIRES_IN' ? '15m' : 'secret',
       );
-      userModel.find.mockResolvedValue([makeUser('a@b.com', 'pw')]);
+      userModel.find.mockResolvedValue([makeUser('a@b.com', 'pw')]);//pw oznacza hasło użytkownika
 
       await service.generateJwtToken('a@b.com', res as any);
 

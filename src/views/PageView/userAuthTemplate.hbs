@@ -1,0 +1,71 @@
+{{> headers}}
+
+{{#if error}}
+<div class="error-message">
+    {{message}}
+</div>
+{{/if}}
+
+<nav class="navbar bg-body-tertiary" id="navbar">
+    <div class="container-fluid justify-content-start" id="sub-navbar">
+        <form action="/user/logout/{{user._id}}" method="post" style="display: inline;">
+            <button class="btn btn-outline-success me-2" type="submit" style="font-style: italic;">Log out</button>
+        </form>
+        <form action="/user/register/{{user._id}}" method="get">
+            <button class="btn btn-sm btn-outline-secondary" type="submit" style="font-style: italic;">Register
+            </button>
+        </form>
+        <form action="/user/delete/{{user._id}}" method="post"
+            onsubmit="return confirm('Are you sure you want to delete your account? This operation is irreversible!');">
+            <button class="btn btn-sm btn-outline-secondary" type="submit"
+                style="font-style: italic; color: red;">Delete
+                account</button>
+        </form>
+        <form action="/user/AuthTemplateCongregate/{{user._id}}" method="get" style="display: inline;">
+            <button class="btn btn-sm btn-outline-secondary" type="submit" style="font-style: italic;">Profile
+            </button>
+        </form>
+    </div>
+</nav>
+<div class="user-page" id="user-page">
+    <div class="user-info" id="user-details" style="
+    font-style:italic; background-color: #063ba4; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+        <div class="user-field">
+            <div class="field-label">
+                <strong>User-Name:</strong>
+            </div>
+            <div class="field-value">
+                {{user.userName}}
+            </div>
+        </div>
+
+        <div class="user-field">
+            <div class="field-label">
+                <strong>Email{confidential}:</strong>
+            </div>
+            <div class="field-value">
+                {{user.email}}
+            </div>
+        </div>
+
+        <div class="user-field">
+            <div class="field-label">
+                <strong>UserRefID:</strong>
+            </div>
+            <div class="field-value">
+                {{user.userRefID}}
+            </div>
+        </div>
+        
+        <div class="user-field">
+            <div class="field-label">
+                <strong>User ID:</strong>
+            </div>
+            <div class="field-value">
+                {{user._id}}
+            </div>
+        </div>
+    </div>
+    <br>
+    
+    

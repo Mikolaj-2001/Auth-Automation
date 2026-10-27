@@ -1,0 +1,57 @@
+{{> headers}}
+<h1>User Registering Form</h1>
+
+{{#if error}}
+<div class="error-message">
+    {{message}}
+</div>
+{{/if}}
+
+<form action="/register" method="POST" id="registerForm">
+    <div class="row g-3 align-items-center" id="userNameField" style="margin-bottom: 10px;">
+        <div class="col-auto" style="margin-bottom: 4px;">
+            <label for="userName" class="userName-input-label"
+                style="text-align: center; vertical-align: middle; width: 100%; display: inline-block;">Provide
+                userName</label>
+            <input type="text" name="userName" id="userName" class="form-control" required style="margin-top: 2px;">
+        </div>
+        <div class="col-auto" style="margin-bottom: 4px;">
+            <label for="surName" class="surName-input-label"
+                style="text-align: center; vertical-align: middle; width: 100%; display: inline-block;">Provide
+                surname</label>
+            <input type="text" name="surName" id="surName" class="form-control" required style="margin-top: 2px;">
+        </div>
+    </div>
+    <div class="row g-3 align-items-center" id="emailField" style="margin-bottom: 10px;">
+        <div class="col-auto" style="margin-bottom: 4px;">
+            <label for="email" class="email-input-label"
+                style="text-align: center; vertical-align: middle; width: 100%; display: inline-block;">Provide
+                email</label>
+            <input type="email" name="email" id="email" class="form-control" required style="margin-top: 2px;">
+        </div>
+    </div>
+    <div class="row g-3 align-items-center" id="passwordField" style="margin-bottom: 10px;">
+
+        <div class="col-auto" style="margin-bottom: 4px;">
+            <label for="password" class="password-input-label"
+                style="text-align: center; vertical-align: middle; width: 100%; display: inline-block;">Provide
+                password</label>
+            <input type="password" name="password" id="password" class="form-control" required style="margin-top: 2px;">
+        </div>
+        {{#if error}}
+        <div class="col-auto" id="passwordError">
+            <span id="passwordHelpInline" class="form-text">
+                Password must contain at least 8 characters, including an uppercase letter, a lowercase letter, a
+                number, and a special character.
+            </span>
+        </div>
+        {{/if}}
+    </div>
+    <div class="col-auto" id="submitButton" style="margin-bottom: 8px;">
+        <button type="submit" class="btn btn-primary" id="registerButton" style="margin-bottom: 0;">Register</button>
+    </div>
+</form>
+<br>
+<footer>
+    <p>&copy; 2024 Auth Automation. All rights reserved to the author:Mikołaj Gafiuk</p>
+</footer>
