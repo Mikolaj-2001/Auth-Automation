@@ -7,12 +7,12 @@ import { defineConfig } from "prisma/config";
 const env = dotenv.config({ path: "prisma/.env" }).parsed;// Wczytujemy zmienne z pliku prisma/.env.
 
 const databaseUrl =
-  env?.DATABASE_URL ?? //?? oznacza operator nullish coalescing, który zwraca wartość po lewej stronie, jeśli nie jest ona null lub undefined, w przeciwnym razie zwraca wartość po prawej stronie.
+  env?.MONGODB_URI ?? //?? oznacza operator nullish coalescing, który zwraca wartość po lewej stronie, jeśli nie jest ona null lub undefined, w przeciwnym razie zwraca wartość po prawej stronie.
   (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env//tutaj używamy globalThis, aby uzyskać dostęp do globalnego obiektu w środowisku Node.js. Następnie sprawdzamy, czy istnieje właściwość process i jej podwłaściwość env, która zawiera zmienne środowiskowe. Używamy operatora optional chaining (?.) do bezpiecznego dostępu do tych właściwości, aby uniknąć błędów, jeśli którakolwiek z nich nie istnieje. W końcu próbujemy uzyskać wartość DATABASE_URL z globalnego obiektu process.env.
-    ?.DATABASE_URL;// Tutaj próbujemy uzyskać wartość DATABASE_URL z globalnego obiektu process.env, jeśli nie została ona ustawiona w pliku .env.
+    ?.MONGODB_URI;// Tutaj próbujemy uzyskać wartość MONGODB_URI z globalnego obiektu process.env, jeśli nie została ona ustawiona w pliku .env.
 //record oznacza, że process.env jest obiektem, którego klucze są typu string, a wartości mogą być typu string lub undefined.
 if (!databaseUrl) {
-  throw new Error("Missing DATABASE_URL in environment.");
+  throw new Error("Missing MONGODB_URI in environment.");
 }
 
 const prismaConfig = {
