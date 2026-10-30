@@ -1,4 +1,4 @@
-// Requires: `npx prisma generate`
+
 import { Prisma, PrismaClient } from '@prisma/client';
 import * as CryptoJs from 'crypto-js';
 
@@ -9,7 +9,8 @@ type AuthCreateInput = {
     Name: string;
     email: string;
     userRefID: string;
-    encryptionKey?: string;
+    encryptionKey: string;
+    userId: string;
 };
 
 type AuthUpdateInput = {
@@ -21,9 +22,9 @@ type AuthUpdateInput = {
 };
 
 type UserCreateInput = {
-    authId: string;
+    authId?: string;
     userName: string;
-    Surname: string;
+    surname: string;
     email: string;
     password: string;
     userRefID: string;
@@ -33,7 +34,7 @@ type UserCreateInput = {
 type UserUpdateInput = {
     userRefID?: string;
     userName?: string;
-    Surname?: string;
+    surname?: string;
     email?: string;
     password?: string;
     encryptionKey?: string;
@@ -51,308 +52,386 @@ export function getPrismaClient(): PrismaClient {
     return prisma;
 }
 
-export async function verifyInputEmail(userRefID: string, providedEmail: string): Promise<boolean> {
+export async function verifyInputEmail(
+    userRefID: string,
+    providedEmail: string
+): Promise<boolean> {
     const user = await prisma.user.findUnique({
-        where: { userRefID: userRefID },
-        select: {//select oznacza, które pola chcemy pobrać z bazy danych
-            encryptionKey: true, email: true
-        },
-    });
-    if (!user || !user.encryptionKey) {
-        return false;
-    }
-    const decryptedEmail = CryptoJs.AES.decrypt(user.email, user.encryptionKey).toString(CryptoJs.enc.Utf8);
-    return decryptedEmail.length > 0 && decryptedEmail === providedEmail;
-}
-
-export async function verifyInputName(userRefID: string, providedName: string): Promise<boolean> {
-    const user = await prisma.user.findUnique({
-        where: {
-            userRefID: userRefID
-        },
+        where: { userRefID },
         select: {
-            encryptionKey: true, Name: true
+            email: true,
+            encryptionKey: true
         }
     });
+
     if (!user || !user.encryptionKey) {
         return false;
     }
-    const decryptedName = CryptoJs.AES.decrypt(user.Name, user.encryptionKey).toString(CryptoJs.enc.Utf8);
-    return decryptedName.length > 0 && decryptedName === providedName;
+
+    const decryptedEmail = CryptoJs.AES.decrypt(
+        user.email,
+        user.encryptionKey
+    ).toString(CryptoJs.enc.Utf8);
+
+    return decryptedEmail.length > 0 &&
+        decryptedEmail === providedEmail;
 }
 
+export async function verifyInputName(
+    userRefID: string,
+    providedName: string
+): Promise<boolean> {
+    const dataAuth = await prisma.dataAuth.findUnique({
+        where: { userRefID },
+        select: {
+            name: true, 
+            encryptionKey: true
+        }
+    });
+
+    if (!dataAuth) {
+        return false;
+    }
+
+    const decryptedName = CryptoJs.AES.decrypt(
+        dataAuth.name,
+        dataAuth.encryptionKey
+    ).toString(CryptoJs.enc.Utf8);
+
+    return decryptedName.length > 0 &&
+        decryptedName === providedName;
+}
 
 export function getAllUsers() {
     return prisma.user.findMany({
         include: {
-            auth: true,
+            dataAuth: true
         }
     });
 }
 
-export function getAllAuths() {
-    return prisma.auth.findMany({
+export function getAllDataAuths() {
+    return prisma.dataAuth.findMany({
         include: {
-            users: true,
+            user: true
         }
     });
 }
 
 export function getUserByRefID(userRefID: string) {
     return prisma.user.findUnique({
-        where: {
-            userRefID: userRefID,
-        },
+        where: { userRefID },
         include: {
-            auth: true,
+            dataAuth: true
         }
     });
 }
 
-export function getAuthByUserRefID(userRefID: string) {
-    return prisma.auth.findUnique({
-        where: {
-            userRefID: userRefID,
-        },
+export function getDataAuthByUserRefID(userRefID: string) {
+    return prisma.dataAuth.findUnique({
+        where: { userRefID },
         include: {
-            users: true,
+            user: true
         }
     });
 }
 
-export function getUserByEmail(email: string) {
+export function getUserById(id: string) {
     return prisma.user.findUnique({
-        where: {
-            email: email,
-        },
+        where: { id },
         include: {
-            auth: true,
+            dataAuth: true
         }
     });
 }
 
-export function getAuthByEmail(email: string) {
-    return prisma.auth.findUnique({
-        where: {
-            email: email,
-        },
+export function getDataAuthById(id: string) {
+    return prisma.dataAuth.findUnique({
+        where: { id },
         include: {
-            users: true,
+            user: true
         }
     });
 }
 
-export function findUserByIdentifier(identifier: string) {
-    return prisma.user.findFirst({
-        where: {
-            OR: [
-                { email: identifier },
-                { userRefID: identifier }
-            ]
+export async function getUserByEmail(email: string) {
+    const users = await prisma.user.findMany({
+        include: {
+            dataAuth: true
         }
     });
+
+    return users.find(user => {
+        if (!user.encryptionKey) {
+            return false;
+        }
+
+        const decryptedEmail = CryptoJs.AES.decrypt(
+            user.email,
+            user.encryptionKey
+        ).toString(CryptoJs.enc.Utf8);
+
+        return decryptedEmail === email;
+    }) ?? null;
 }
 
-export function findAuthByIdentifier(identifier: string) {
-    return prisma.auth.findFirst({
-        where: {
-            OR: [
-                { email: identifier },
-                { userRefID: identifier }
-            ]
+export async function getDataAuthByEmail(email: string) {
+    const auths = await prisma.dataAuth.findMany({
+        include: {
+            user: true
         }
     });
+
+    return auths.find(auth => {
+        const decryptedEmail = CryptoJs.AES.decrypt(
+            auth.email,
+            auth.encryptionKey
+        ).toString(CryptoJs.enc.Utf8);
+
+        return decryptedEmail === email;
+    }) ?? null;
+}
+
+export async function findUserByIdentifier(identifier: string) {
+    const user = await prisma.user.findUnique({
+        where: { userRefID: identifier },
+        include: {
+            dataAuth: true
+        }
+    });
+
+    if (user) {
+        return user;
+    }
+
+    return getUserByEmail(identifier);
+}
+
+export async function findDataAuthByIdentifier(identifier: string) {
+    const dataAuth = await prisma.dataAuth.findUnique({
+        where: { userRefID: identifier },
+        include: {
+            user: true
+        }
+    });
+
+    if (dataAuth) {
+        return dataAuth;
+    }
+
+    return getDataAuthByEmail(identifier);
 }
 
 export async function createUser(data: UserCreateInput) {
     return prisma.user.create({
         data: {
             userName: data.userName,
-            Surname: data.Surname,
+            surname: data.surname,
             email: data.email,
             password: data.password,
             userRefID: data.userRefID,
-            encryptionKey: data.encryptionKey,
-            auth: { connect: { authId: data.authId } },
+            ...(data.encryptionKey !== undefined // ... oznaczają, że jeśli encryptionKey jest zdefiniowany, dodajemy go do obiektu danych
+                ? { encryptionKey: data.encryptionKey }
+                : {})
+        },
+        include: {
+            dataAuth: true
         }
     });
 }
 
-export async function createAuth(data: AuthCreateInput) {
-    return prisma.auth.create({
+export async function createDataAuth(data: AuthCreateInput) {
+    return prisma.dataAuth.create({
         data: {
             userAuthID: data.userAuthID,
-            Name: data.Name,
+            name: data.Name,
             email: data.email,
             userRefID: data.userRefID,
             encryptionKey: data.encryptionKey,
+            userId: data.userId
+        },
+        include: {
+            user: true
         }
     });
 }
 
-export function updateUserByRefID(userRefID: string, userData: UserUpdateInput) {
+export function updateUserByRefID(
+    userRefID: string,
+    userData: UserUpdateInput
+) {
     return prisma.user.update({
-        where: {
-            userRefID: userRefID,
-        },
+        where: { userRefID },
         data: userData,
+        include: {
+            dataAuth: true
+        }
     });
 }
 
-export function updateAuthByUserRefID(userRefID: string, authData: AuthUpdateInput) {
-    return prisma.auth.update({
-        where: {
-            userRefID: userRefID,
+export function updateDataAuthByUserRefID(
+    userRefID: string,
+    authData: AuthUpdateInput
+) {
+    return prisma.dataAuth.update({
+        where: { userRefID },
+        data: {
+            ...(authData.userAuthID !== undefined
+                ? { userAuthID: authData.userAuthID }
+                : {}),
+            ...(authData.Name !== undefined
+                ? { name: authData.Name }
+                : {}),
+            ...(authData.email !== undefined
+                ? { email: authData.email }
+                : {}),
+            ...(authData.userRefID !== undefined
+                ? { userRefID: authData.userRefID }
+                : {}),
+            ...(authData.encryptionKey !== undefined
+                ? { encryptionKey: authData.encryptionKey }
+                : {})
         },
-        data: authData,
-    });
-}
-
-export function updateUserByAuthId(authId: string, userData: UserUpdateInput) {
-    return prisma.user.updateMany({
-        where: {
-            authId: authId,
-        },
-        data: userData,
-    });
-}
-
-export function updateAuthByAuthId(authId: string, authData: AuthUpdateInput) {
-    return prisma.auth.updateMany({
-        where: {
-            authId: authId,
-        },
-        data: authData,
+        include: {
+            user: true
+        }
     });
 }
 
 export function deleteUserByRefID(userRefID: string) {
     return prisma.user.delete({
-        where: {
-            userRefID: userRefID,
-        },
+        where: { userRefID }
     });
 }
 
-export function deleteAuthByUserRefID(userRefID: string) {
-    return prisma.auth.delete({
-        where: {
-            userRefID: userRefID,
-        },
+export function deleteDataAuthByUserRefID(userRefID: string) {
+    return prisma.dataAuth.delete({
+        where: { userRefID }
     });
 }
 
-export function deleteUserByAuthId(authId: string) {
-    return prisma.user.deleteMany({
-        where: {
-            authId: authId,
-        },
-    });
-}
-
-export function deleteAuthByAuthId(authId: string) {
-    return prisma.auth.deleteMany({
-        where: {
-            authId: authId,
-        },
-    });
-}
-
-export function getAllAuthsAfter(date: Date) {
-    return prisma.auth.findMany({
+export function getAllDataAuthsAfter(date: Date) {
+    return prisma.dataAuth.findMany({
         where: {
             createdAt: {
-                gt: date,
-            },
+                gt: date
+            }
         },
         include: {
-            users: true,
+            user: true
         }
     });
 }
 
-export function getAuthById(authId: string) {
-    return prisma.auth.findUnique({
-        where: {
-            authId: authId,
-        },
-        include: {
-            users: true,
-        }
-    });
-}
-
-export function createAuthCongregate(
-    authData: AuthCreateInput,
-    userData: Omit<UserCreateInput, 'authId' | 'userRefID'>,
-    userNumber: string,
+export async function createUserCongregate(
+    userData: UserCreateInput,
+    authData: Omit<AuthCreateInput, 'userId'>
 ) {
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const auth = await tx.auth.create({
-            data: authData,
-        });
+    return prisma.$transaction(
+        async (tx: Prisma.TransactionClient) => {
+            const user = await tx.user.create({
+                data: {
+                    userName: userData.userName,
+                    surname: userData.surname,
+                    email: userData.email,
+                    password: userData.password,
+                    userRefID: userData.userRefID,
+                    ...(userData.encryptionKey !== undefined
+                        ? { encryptionKey: userData.encryptionKey }
+                        : {})
+                }
+            });
 
-        const user = await tx.user.create({
-            data: {
-                ...userData,
-                authId: auth.authId,
-                userRefID: `${auth.authId}@${userNumber}`,
-            },
-        });
+            const dataAuth = await tx.dataAuth.create({
+                data: {
+                    userAuthID: authData.userAuthID,
+                    name: authData.Name,
+                    email: authData.email,
+                    userRefID: authData.userRefID,
+                    encryptionKey: authData.encryptionKey,
+                    userId: user.id
+                }
+            });
 
-        return { auth, user };
-    });
-}
-//transactionClient to inaczej typ,który reprezentuje klienta transakcji Prisma,czyli obiekt, który umożliwia wykonywanie operacji na bazie danych w ramach jednej transakcji.
-export function updateAuthCongregate(authId: string, authData: AuthUpdateInput, userRefData: UserUpdateInput) {
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const auth = await tx.auth.update({
-            where: {
-                authId: authId,
-            },
-            data: authData,
-        });
-
-        const user = await tx.user.updateMany({
-            where: {
-                authId: authId,
-            },
-            data: userRefData,
-        });
-
-        return { auth, user };
-    });
+            return {
+                user,
+                dataAuth
+            };
+        }
+    );
 }
 
-export function deleteAuthCongregate(authId: string) {
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const user = await tx.user.deleteMany({
-            where: {
-                authId: authId,
-            },
-        });
+export async function updateUserCongregate(
+    userRefID: string,
+    userData: UserUpdateInput,
+    authData: AuthUpdateInput
+) {
+    return prisma.$transaction(
+        async (tx: Prisma.TransactionClient) => {
+            const user = await tx.user.update({
+                where: { userRefID },
+                data: userData
+            });
 
-        const auth = await tx.auth.deleteMany({
-            where: {
-                authId: authId,
-            },
-        });
+            const dataAuth = await tx.dataAuth.update({
+                where: { userId: user.id },
+                data: {
+                    ...(authData.userAuthID !== undefined
+                        ? { userAuthID: authData.userAuthID }
+                        : {}),
+                    ...(authData.Name !== undefined
+                        ? { name: authData.Name }
+                        : {}),
+                    ...(authData.email !== undefined
+                        ? { email: authData.email }
+                        : {}),
+                    ...(authData.userRefID !== undefined
+                        ? { userRefID: authData.userRefID }
+                        : {}),
+                    ...(authData.encryptionKey !== undefined
+                        ? { encryptionKey: authData.encryptionKey }
+                        : {})
+                }
+            });
 
-        return { auth, user };
-    });
+            return {
+                user,
+                dataAuth
+            };
+        }
+    );
 }
 
-export function indicateAuthCongregate(authId: string) {
-    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const auth = await tx.auth.findUnique({
-            where: {
-                authId: authId,
-            },
-            include: {
-                users: true,
-            },
-        });
+export async function deleteUserCongregate(userRefID: string) {
+    return prisma.$transaction(
+        async (tx: Prisma.TransactionClient) => {
+            const user = await tx.user.findUniqueOrThrow({
+                where: { userRefID }
+            });
 
-        return { auth };
+            const dataAuth = await tx.dataAuth.deleteMany({
+                where: {
+                    userId: user.id
+                }
+            });
+
+            const deletedUser = await tx.user.delete({
+                where: { id: user.id }
+            });
+
+            return {
+                user: deletedUser,
+                dataAuth
+            };
+        }
+    );
+}
+
+export function indicateUserCongregate(userRefID: string) {
+    return prisma.user.findUnique({
+        where: { userRefID },
+        include: {
+            dataAuth: true
+        }
     });
 }
