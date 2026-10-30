@@ -106,11 +106,11 @@ export class AuthServiceService {
     };
 
     const token = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_AUTH_TOKEN'),
+      secret: this.configService.get('JWT_AUTH_TOKEN'),
       algorithm: 'HS256', // Ten sam algorytm, który wymusza verifyToken
       issuer: 'auth-automation', // Wystawca tokenu, sprawdzany w verifyToken
       audience: 'auth-automation-client', // Odbiorca tokenu, sprawdzany w verifyToken
-      expiresIn: (this.configService.get<string>('JWT_AUTH_TOKEN_EXPIRES_IN') ||
+      expiresIn: (this.configService.get('JWT_AUTH_TOKEN_EXPIRES_IN') ||
         '1h') as any,
     });
 

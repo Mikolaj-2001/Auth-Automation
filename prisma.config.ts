@@ -1,5 +1,6 @@
+/// <reference types="node" />
 import "dotenv/config";
-import type { PrismaConfig } from "prisma";
+import type { PrismaConfig } from "prisma/config";
 
 export default {
   schema: "prisma/schema.prisma",

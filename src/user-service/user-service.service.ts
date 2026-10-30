@@ -81,9 +81,9 @@ export class UserServiceService {
     }
 
     async findUserByRefId(userRefID: string): Promise<User | null> {
-        return this.userSchema.findOne({ userRefID }).lean().exec();
+        return this.userSchema.findOne({ userRefID }).exec();
     }
-
+    
     async findAllUsers(userRefID?: string, email?: string): Promise<User[]> {
         let allUsers = await this.userSchema.find({ userRefID, email }).exec();
         if (!userRefID) {
