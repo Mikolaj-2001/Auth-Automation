@@ -85,7 +85,7 @@ jobs:
     needs: build
     environment: testing
     env:
-      MONGODB_URL: mongodb+srv://mgafiuk2001_db_cluster:09041976Polska05@cluster1.lybdjmd.mongodb.net/${{ secrets.MONGO_DB_NAME }}
+      MONGODB_URL: mongodb+srv://mgafiuk2001_db_cluster:09041976Polska05@cluster1.lybdjmd.mongodb.net/${{ secrets.MONGO_DB_NAME }}?directConnection=true
       MONGODB_USER: ${{ secrets.MONGODB_USER }}
       JWT_AUTH_TOKEN: ${{ secrets.JWT_AUTH_TOKEN }}
       JWT_AUTH_TOKEN_EXPIRES_IN: 1h
