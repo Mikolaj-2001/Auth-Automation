@@ -16,7 +16,7 @@ FROM node:22-alpine
 
 RUN apk add --no-cache openssl 
 ENV NODE_ENV=production \
-    PORT=3000
+    APP_PORT=3000
 
 WORKDIR /app
 
@@ -32,5 +32,6 @@ COPY public ./public
 USER node
 
 EXPOSE 3000
+ENV PORT=$APP_PORT
 
 CMD [ "node", "dist/main.js" ]

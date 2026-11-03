@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule, ObserveInstrument } from './app.module';
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
@@ -10,7 +11,13 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     instrument: ObserveInstrument,
   });
+  app.set('trust proxy', true); // Ustawienie zaufania dla nagłówków proxy, np. X-Forwarded-For, aby poprawnie identyfikować adres IP klienta
 
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }));
   app.use(cookieParser());
 
   const loginLimitation = rateLimit({
@@ -35,9 +42,8 @@ async function bootstrap() {
   hbs.registerHelper('lowercase', (str: string) => str.toLowerCase());
 
   const port = process.env.APP_PORT ?? 9800;
+  app.use('/user/login', loginLimitation);
   await app.listen(port);
   console.log('App has started successfully on port', port);
-
-  app.use('/user/login', loginLimitation);
 }
 bootstrap();

@@ -139,7 +139,8 @@ export class UserControllerController {
             }
             await this.authService.generateJwtToken(userLoggingIn.email, res);
             return res.render('PageView/userAuthTemplate', {
-                user: authData.toObject(),
+                user: user.toObject(),//pomaga to w renderowaniu danych użytkownika w szablonie
+                auth: authData.toObject(),
                 email: userLoggingIn.email,
                 _id: user._id,
             });
@@ -169,7 +170,7 @@ export class UserControllerController {
         }
     }
 
-    @Delete(':id')
+    @Post('delete/:id')
     @UseGuards(AuthConfigMiddleware, LeakServiceGuard)
     async deleteUser(
         @Param('id')

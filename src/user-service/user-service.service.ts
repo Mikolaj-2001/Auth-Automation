@@ -64,7 +64,7 @@ export class UserServiceService {
                 Object.assign(updatedUser, updatedRefDoc);
             }
         }
-        Object.assign(updatedUser, updateDTO);
+        Object.assign(updatedUser, updateDTO);//object.assign oznacza przypisanie właściwości z updateDTO do updatedUser
         return await updatedUser.save();
     }
 

@@ -10,7 +10,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserControllerController } from './user-controller/user-controller.controller';
 import { LeakServiceGuard } from './authLeakDetection/leak-service.guard';
 
-export const { ObserveModule, ObserveInstrument } = createObserveModule();
+export const { ObserveModule, ObserveInstrument } = createObserveModule();//tworzy moduł obserwacji i instrumentacji dla NestJS,czyli umożliwia monitorowanie i instrumentowanie aplikacji NestJS do celów diagnostycznych i monitorowania wydajności
 
 @Module({
   imports: [
@@ -18,6 +18,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     AuthModule,
     MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/auth-automation'),
     ConfigModule.forRoot({ isGlobal: true }),
+    ObserveModule,
   ],
   controllers: [AppController, UserControllerController],
   providers: [AppService, UserServiceService, LeakServiceGuard],

@@ -7,6 +7,7 @@ import { UserModule } from '../user-module/userModule.module';
 import { AuthServiceService } from '../authentication/auth-service/auth-service.service';
 import { AuthGuard } from '../authentication/auth-guard/auth-guard';
 import { LeakServiceGuard } from '../authLeakDetection/leak-service.guard';
+import { AuthConfigMiddleware } from '../auth-config-middelware/auth-config';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { LeakServiceGuard } from '../authLeakDetection/leak-service.guard';
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply().forRoutes(
+    consumer.apply(AuthConfigMiddleware).forRoutes(
       { path: 'auth/*path', method: RequestMethod.ALL }
     );
   }

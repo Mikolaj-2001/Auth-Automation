@@ -120,7 +120,7 @@ export class AuthServiceService {
       sameSite:
         'strict' /* Wysyłanie cookies z żądaniem do domen o tym samym adresie  */,
       secure:
-        process.env.Node_ENV ===
+        process.env.NODE_ENV ===
         'production' /* ustawienie przesyłania tylko przez żądanie HTTPS i ustawienie,aby działa w trybie produkcyjnym na serwerze HTTPS */,
       maxAge: 3600000 /* Długość ważności cookies */,
     }); /* Token JWT został ustawiony w ciasteczku */

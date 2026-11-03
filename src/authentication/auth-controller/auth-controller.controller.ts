@@ -9,6 +9,7 @@ import { IsMongoId, IsNumber } from 'class-validator';
 import { PickType } from '@nestjs/mapped-types';
 import { DataAuth } from '../../authData-schema/dataAuth.schema';
 import { LeakServiceGuard } from '../../authLeakDetection/leak-service.guard';
+import { UnauthorizedException } from '@nestjs/common';
 
 @Controller('auth-controller')
 export class AuthControllerController { }
@@ -52,6 +53,23 @@ export class AuthController {
         };
     }
 
+    @Get('AuthTemplateCongregate/:id')
+    @UseGuards(AuthConfigMiddleware)
+    @Render('PageView/AuthTemplateCongregate')
+    async getAuthTemplateCongregate(
+        @Param('id') userRefID: string,
+        @Req() req: any,
+    ) {
+        if (req.user?.userRefID !== userRefID) {
+            throw new UnauthorizedException('You are not authorized to view this auth template.');
+        }
+        const auth = await this.authService.findAuthByUserRefID(userRefID);
+        return {
+            auth,
+            user: req.user,
+        };
+    }
+
     @Post('update/:id')
     @UseGuards(AuthConfigMiddleware)
     @Render('PageView/AuthTemplateCongregate')
@@ -60,23 +78,30 @@ export class AuthController {
         @Body() updateDto: AuthUpdateDto,
         @Req() req: any,
     ) {
-        if (!id) {
-            return { message: 'Lack of required ID.' };
+        // Rekord DataAuth zalogowanego użytkownika; id z adresu musi być jego _id
+        const ownAuth = await this.authService.findAuthByUserRefID(req.user.userRefID);
+
+        if (!ownAuth || String(ownAuth._id) !== id) {
+            throw new UnauthorizedException('You are not authorized to update this auth.');
         }
+
+        if (updateDto.userRefID !== undefined && String(updateDto.userRefID) !== ownAuth.userRefID) {
+            throw new UnauthorizedException('Invalid userRefID.');
+        }
+
         const updatedAuth = await this.authService.updateAuth(id, updateDto);
         if (!updatedAuth) {
             return { message: 'Update failed.' };
         }
 
-        const user = req.user && (updatedAuth.userID ? await this.userService.findUserByRefId(updatedAuth.userID) : null);
         return {
             message: 'Update successful.',
             updatedAuth,
-            user,
+            user: req.user,
         };
     }
 
-    @Delete('delete/:id')
+    @Post('delete/:id')
     @UseGuards(AuthConfigMiddleware)
     @Render('PageView/AuthTemplateCongregate')
     async deleteAuth(
@@ -84,19 +109,30 @@ export class AuthController {
         @Body() deleteSelectionDTO: deleteSelectionDTO,
         @Req() req: any,
     ) {
-        if (!id && !deleteSelectionDTO.userAuthID && !deleteSelectionDTO.userId) {
-            return { message: 'Lack of required ID or selection to delete the user.' };
+        // Rekord DataAuth zalogowanego użytkownika, z którym porównujemy dane z body
+        const ownAuth = await this.authService.findAuthByUserRefID(req.user.userRefID);
+
+        if (!ownAuth || String(ownAuth._id) !== id) {
+            throw new UnauthorizedException('You are not authorized to delete this auth.');
         }
+
+        // Dane z deleteSelectionDTO muszą wskazywać dokładnie na rekord tego użytkownika
+        if (
+            Number(deleteSelectionDTO.userAuthID) !== ownAuth.userAuthID ||
+            String(deleteSelectionDTO.userId) !== String(ownAuth.userId)
+        ) {
+            throw new UnauthorizedException('The selection does not match your auth data.');
+        }
+
         const authToDelete = await this.authService.deleteSelection({
-            userAuthID: deleteSelectionDTO.userAuthID,
-            userId: deleteSelectionDTO.userId,
+            userAuthID: ownAuth.userAuthID,
+            userId: ownAuth.userId,
         });
 
-        const user = req.user && (deleteSelectionDTO.userId ? await this.userService.findUserByRefId(deleteSelectionDTO.userId.toString()) : null);
         return {
             message: 'Deletion successful.',
             authToDelete,
-            user,
+            user: req.user,
         };
     }
 

@@ -108,6 +108,9 @@ jobs:
       - name: Initialise Prisma Client
         run: npx prisma generate
 
+      - name: Run Jest unit tests
+        run: npm test -- --runInBand
+
       - name: Run Server
         run: |
           npm start &

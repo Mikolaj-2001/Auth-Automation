@@ -8,7 +8,7 @@
 
 <nav class="navbar bg-body-tertiary" id="navbar">
     <div class="container-fluid justify-content-start" id="sub-navbar">
-        <form action="/user/userAuthTemplate/{{user._id}}" method="get" style="display: inline;">
+        <form action="/auth/user/userAuthTemplate/{{user._id}}" method="get" style="display: inline;">
             <button class="btn btn-outline-success me-2" type="submit" style="font-style: italic;">Log out</button>
         </form>
     </div>
@@ -17,7 +17,7 @@
     <h1>Welcome, {{user.userName}}</h1>
     <p>Your email: {{user.email}}</p>
     <p>Your ID: {{user._id}}</p>
-    <p>Your user reference ID: {{user.usrefID}}</p>
+    <p>Your user reference ID: {{user.userRefID}}</p>
 </div>
 
 <form action="/{{user._id}}" method="post" style="display: inline;">

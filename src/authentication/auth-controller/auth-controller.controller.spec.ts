@@ -27,7 +27,7 @@ describe('AuthController', () => {
     userService = {
       findAllUsers: jest.fn().mockResolvedValue([]),
       findUserByRefId: jest.fn(),
-      generateUserAuthID: jest.fn().mockResolvedValue(42),
+      generateUserAuthID: jest.fn().mockResolvedValue(42),//42 to przykładowy zwracany identyfikator autoryzacji użytkownika
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -38,8 +38,8 @@ describe('AuthController', () => {
         { provide: UserServiceService, useValue: userService },
       ],
     })
-      .overrideGuard(AuthConfigMiddleware)
-      .useValue({ canActivate: () => true })
+      .overrideGuard(AuthConfigMiddleware)//override the guard to always allow access during testing
+      .useValue({ canActivate: () => true })//always allow access during testing
       .compile();
 
     controller = module.get<AuthController>(AuthController);
@@ -58,7 +58,7 @@ describe('AuthController', () => {
 
       expect(userService.findAllUsers).toHaveBeenCalledWith(undefined, undefined);
       expect(userService.findUserByRefId).not.toHaveBeenCalled();
-      expect(authService.createAuth).not.toHaveBeenCalled();
+      expect(authService.createAuth).not.toHaveBeenCalled();//not tutaj because no auth should be created when only users are fetched
       expect(result.users).toBe(users);
       expect(result.user).toBeNull();
       expect(result.authorisation).toBeNull();

@@ -7,32 +7,36 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  userName      String   @unique
-  surname       String
-  email         String   @unique
-  password      String   @unique
-  userRefID     String   @unique
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  userName      String    @unique
+  Surname       String
+  email         String    @unique
+  password      String    @unique
+  userRefID     String    @unique
   encryptionKey String?
 
-  dataAuth      DataAuth?
+  dataAuthById  DataAuth? @relation("DataAuthByUserId")
+  dataAuthByRef DataAuth? @relation("DataAuthByUserRefID")
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
 }
 
 model DataAuth {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
-
   userId        String   @unique @db.ObjectId
-  user          User     @relation(fields: [userId], references: [id])
-
-  userAuthID    BigInt   @unique
-  name          String
+  user          User     @relation("DataAuthByUserId", fields: [userId], references: [id])
+  userByRef     User     @relation("DataAuthByUserRefID", fields: [userRefID], references: [userRefID])
+  userAuthID    Float    @unique
+  Name          String
   email         String   @unique
   userRefID     String   @unique
   encryptionKey String
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@map("dataauths")
 }

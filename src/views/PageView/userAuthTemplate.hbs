@@ -8,10 +8,10 @@
 
 <nav class="navbar bg-body-tertiary" id="navbar">
     <div class="container-fluid justify-content-start" id="sub-navbar">
-        <form action="/user/logout/{{user._id}}" method="post" style="display: inline;">
+        <form action="/user/logout" method="post" style="display: inline;">
             <button class="btn btn-outline-success me-2" type="submit" style="font-style: italic;">Log out</button>
         </form>
-        <form action="/user/register/{{user._id}}" method="get">
+        <form action="/user/register" method="get">
             <button class="btn btn-sm btn-outline-secondary" type="submit" style="font-style: italic;">Register
             </button>
         </form>
@@ -21,7 +21,7 @@
                 style="font-style: italic; color: red;">Delete
                 account</button>
         </form>
-        <form action="/user/AuthTemplateCongregate/{{user._id}}" method="get" style="display: inline;">
+        <form action="/auth/user/AuthTemplateCongregate/{{user._id}}" method="get" style="display: inline;">
             <button class="btn btn-sm btn-outline-secondary" type="submit" style="font-style: italic;">Profile
             </button>
         </form>
@@ -41,7 +41,7 @@
 
         <div class="user-field">
             <div class="field-label">
-                <strong>Email{confidential}:</strong>
+                <strong>Email(confidential):</strong>
             </div>
             <div class="field-value">
                 {{user.email}}
@@ -56,7 +56,7 @@
                 {{user.userRefID}}
             </div>
         </div>
-        
+
         <div class="user-field">
             <div class="field-label">
                 <strong>User ID:</strong>
@@ -67,5 +67,4 @@
         </div>
     </div>
     <br>
-    
-    
+</div>

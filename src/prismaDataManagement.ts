@@ -1,11 +1,10 @@
-
 import { Prisma, PrismaClient } from '@prisma/client';
 import * as CryptoJs from 'crypto-js';
 
 const prisma = new PrismaClient();
 
 type AuthCreateInput = {
-    userAuthID: bigint;
+    userAuthID: number;
     Name: string;
     email: string;
     userRefID: string;
@@ -13,32 +12,60 @@ type AuthCreateInput = {
     userId: string;
 };
 
-type AuthUpdateInput = {
-    userAuthID?: bigint;
-    Name?: string;
-    email?: string;
-    userRefID?: string;
-    encryptionKey?: string;
-};
+type AuthUpdateInput = Partial<Omit<AuthCreateInput, 'userId'>>;
 
 type UserCreateInput = {
-    authId?: string;
     userName: string;
-    surname: string;
+    Surname: string;
     email: string;
     password: string;
     userRefID: string;
     encryptionKey?: string;
 };
 
-type UserUpdateInput = {
-    userRefID?: string;
-    userName?: string;
-    surname?: string;
-    email?: string;
-    password?: string;
-    encryptionKey?: string;
-};
+type UserUpdateInput = Partial<UserCreateInput>;//partial pozwala na aktualizację tylko wybranych pól
+
+// Model DataAuth szyfruje Name i email (AES) kluczem zapisanym w encryptionKey
+function decryptAES(cipherText: string, key: string): string {
+    try {
+        return CryptoJs.AES.decrypt(cipherText, key).toString(CryptoJs.enc.Utf8);
+    } catch {
+        return '';
+    }
+}
+
+// Pre-save hook zapisuje Name wielkimi literami, a email małymi, więc porównujemy w tej samej postaci
+function matchesEmail(auth: { email: string; encryptionKey: string }, email: string): boolean {
+    const decrypted = decryptAES(auth.email, auth.encryptionKey);
+    return decrypted.length > 0 && decrypted.toLowerCase() === email.toLowerCase();
+}
+
+function matchesName(auth: { Name: string; encryptionKey: string }, name: string): boolean {
+    const decrypted = decryptAES(auth.Name, auth.encryptionKey);
+    return decrypted.length > 0 && decrypted.toUpperCase() === name.toUpperCase();
+}
+
+// Prisma ignoruje pola undefined, więc do update trafiają tylko przekazane wartości
+function buildAuthUpdate(authData: AuthUpdateInput): Prisma.DataAuthUncheckedUpdateInput {
+    return {
+        userAuthID: authData.userAuthID,
+        Name: authData.Name,
+        email: authData.email,
+        userRefID: authData.userRefID,
+        encryptionKey: authData.encryptionKey,
+    };
+}
+
+function buildUserCreate(userData: UserCreateInput): Prisma.UserCreateInput {//tworzy obiekt do tworzenia użytkownika w Prisma,aby uniknąć bezpośredniego przekazywania danych wejściowych
+    return {
+        userName: userData.userName,
+        Surname: userData.Surname,
+        email: userData.email,
+        password: userData.password,
+        userRefID: userData.userRefID,
+        encryptionKey: userData.encryptionKey,
+    };
+}
 
 export async function connectPrismaClient(): Promise<void> {
     await prisma.$connect();
@@ -56,25 +83,11 @@ export async function verifyInputEmail(
     userRefID: string,
     providedEmail: string
 ): Promise<boolean> {
-    const user = await prisma.user.findUnique({
-        where: { userRefID },
-        select: {
-            email: true,
-            encryptionKey: true
-        }
+    const dataAuth = await prisma.dataAuth.findUnique({
+        where: { userRefID }
     });
 
-    if (!user || !user.encryptionKey) {
-        return false;
-    }
-
-    const decryptedEmail = CryptoJs.AES.decrypt(
-        user.email,
-        user.encryptionKey
-    ).toString(CryptoJs.enc.Utf8);
-
-    return decryptedEmail.length > 0 &&
-        decryptedEmail === providedEmail;
+    return dataAuth !== null && matchesEmail(dataAuth, providedEmail);
 }
 
 export async function verifyInputName(
@@ -82,99 +95,45 @@ export async function verifyInputName(
     providedName: string
 ): Promise<boolean> {
     const dataAuth = await prisma.dataAuth.findUnique({
-        where: { userRefID },
-        select: {
-            name: true, 
-            encryptionKey: true
-        }
+        where: { userRefID }
     });
 
-    if (!dataAuth) {
-        return false;
-    }
-
-    const decryptedName = CryptoJs.AES.decrypt(
-        dataAuth.name,
-        dataAuth.encryptionKey
-    ).toString(CryptoJs.enc.Utf8);
-
-    return decryptedName.length > 0 &&
-        decryptedName === providedName;
+    return dataAuth !== null && matchesName(dataAuth, providedName);
 }
 
 export function getAllUsers() {
-    return prisma.user.findMany({
-        include: {
-            dataAuth: true
-        }
-    });
+    return prisma.user.findMany();
 }
 
 export function getAllDataAuths() {
-    return prisma.dataAuth.findMany({
-        include: {
-            user: true
-        }
-    });
+    return prisma.dataAuth.findMany();
 }
 
 export function getUserByRefID(userRefID: string) {
     return prisma.user.findUnique({
-        where: { userRefID },
-        include: {
-            dataAuth: true
-        }
+        where: { userRefID }
     });
 }
 
 export function getDataAuthByUserRefID(userRefID: string) {
     return prisma.dataAuth.findUnique({
-        where: { userRefID },
-        include: {
-            user: true
-        }
+        where: { userRefID }
     });
 }
 
 export function getUserById(id: string) {
     return prisma.user.findUnique({
-        where: { id },
-        include: {
-            dataAuth: true
-        }
+        where: { id }
     });
 }
 
 export function getDataAuthById(id: string) {
     return prisma.dataAuth.findUnique({
-        where: { id },
-        include: {
-            user: true
-        }
+        where: { id }
     });
 }
 
-export async function getUserByEmail(email: string) {
-    const users = await prisma.user.findMany({
-        include: {
-            dataAuth: true
-        }
-    });
-
-    return users.find(user => {
-        if (!user.encryptionKey) {
-            return false;
-        }
-
-        const decryptedEmail = CryptoJs.AES.decrypt(
-            user.email,
-            user.encryptionKey
-        ).toString(CryptoJs.enc.Utf8);
-
-        return decryptedEmail === email;
-    }) ?? null;
-}
-
+// Email w DataAuth jest zaszyfrowany losowym kluczem, więc nie da się go filtrować w bazie
 export async function getDataAuthByEmail(email: string) {
     const auths = await prisma.dataAuth.findMany({
         include: {
@@ -182,29 +141,33 @@ export async function getDataAuthByEmail(email: string) {
         }
     });
 
-    return auths.find(auth => {
-        const decryptedEmail = CryptoJs.AES.decrypt(
-            auth.email,
-            auth.encryptionKey
-        ).toString(CryptoJs.enc.Utf8);
+    return auths.find(auth => matchesEmail(auth, email)) ?? null;
+}
 
-        return decryptedEmail === email;
-    }) ?? null;
+export async function getUserByEmail(email: string) {
+    const auth = await getDataAuthByEmail(email);
+
+    if (!auth) {
+        return null;
+    }
+
+    return prisma.user.findUnique({
+        where: { id: auth.userId },
+        include: {
+            dataAuthById: true
+        }
+    });
 }
 
 export async function findUserByIdentifier(identifier: string) {
     const user = await prisma.user.findUnique({
         where: { userRefID: identifier },
         include: {
-            dataAuth: true
+            dataAuthById: true
         }
     });
 
-    if (user) {
-        return user;
-    }
-
-    return getUserByEmail(identifier);
+    return user ?? getUserByEmail(identifier);
 }
 
 export async function findDataAuthByIdentifier(identifier: string) {
@@ -215,36 +178,45 @@ export async function findDataAuthByIdentifier(identifier: string) {
         }
     });
 
-    if (dataAuth) {
-        return dataAuth;
-    }
-
-    return getDataAuthByEmail(identifier);
+    return dataAuth ?? getDataAuthByEmail(identifier);
 }
 
-export async function createUser(data: UserCreateInput) {
-    return prisma.user.create({
-        data: {
-            userName: data.userName,
-            surname: data.surname,
-            email: data.email,
-            password: data.password,
-            userRefID: data.userRefID,
-            ...(data.encryptionKey !== undefined // ... oznaczają, że jeśli encryptionKey jest zdefiniowany, dodajemy go do obiektu danych
-                ? { encryptionKey: data.encryptionKey }
-                : {})
+export function getAllDataAuthsAfter(date: Date) {
+    return prisma.dataAuth.findMany({
+        where: {
+            createdAt: {
+                gt: date
+            }
         },
         include: {
-            dataAuth: true
+            user: true
         }
     });
 }
 
-export async function createDataAuth(data: AuthCreateInput) {
+export function indicateUserCongregate(userRefID: string) {
+    return prisma.user.findUnique({
+        where: { userRefID },
+        include: {
+            dataAuthById: true
+        }
+    });
+}
+
+export function createUser(data: UserCreateInput) {
+    return prisma.user.create({
+        data: buildUserCreate(data),
+        include: {
+            dataAuthById: true
+        }
+    });
+}
+
+export function createDataAuth(data: AuthCreateInput) {
     return prisma.dataAuth.create({
         data: {
             userAuthID: data.userAuthID,
-            name: data.Name,
+            Name: data.Name,
             email: data.email,
             userRefID: data.userRefID,
             encryptionKey: data.encryptionKey,
@@ -264,7 +236,7 @@ export function updateUserByRefID(
         where: { userRefID },
         data: userData,
         include: {
-            dataAuth: true
+            dataAuthById: true
         }
     });
 }
@@ -275,23 +247,7 @@ export function updateDataAuthByUserRefID(
 ) {
     return prisma.dataAuth.update({
         where: { userRefID },
-        data: {
-            ...(authData.userAuthID !== undefined
-                ? { userAuthID: authData.userAuthID }
-                : {}),
-            ...(authData.Name !== undefined
-                ? { name: authData.Name }
-                : {}),
-            ...(authData.email !== undefined
-                ? { email: authData.email }
-                : {}),
-            ...(authData.userRefID !== undefined
-                ? { userRefID: authData.userRefID }
-                : {}),
-            ...(authData.encryptionKey !== undefined
-                ? { encryptionKey: authData.encryptionKey }
-                : {})
-        },
+        data: buildAuthUpdate(authData),
         include: {
             user: true
         }
@@ -310,42 +266,20 @@ export function deleteDataAuthByUserRefID(userRefID: string) {
     });
 }
 
-export function getAllDataAuthsAfter(date: Date) {
-    return prisma.dataAuth.findMany({
-        where: {
-            createdAt: {
-                gt: date
-            }
-        },
-        include: {
-            user: true
-        }
-    });
-}
-
-export async function createUserCongregate(
+export function createUserCongregate(
     userData: UserCreateInput,
     authData: Omit<AuthCreateInput, 'userId'>
 ) {
     return prisma.$transaction(
         async (tx: Prisma.TransactionClient) => {
             const user = await tx.user.create({
-                data: {
-                    userName: userData.userName,
-                    surname: userData.surname,
-                    email: userData.email,
-                    password: userData.password,
-                    userRefID: userData.userRefID,
-                    ...(userData.encryptionKey !== undefined
-                        ? { encryptionKey: userData.encryptionKey }
-                        : {})
-                }
+                data: buildUserCreate(userData)
             });
 
             const dataAuth = await tx.dataAuth.create({
                 data: {
                     userAuthID: authData.userAuthID,
-                    name: authData.Name,
+                    Name: authData.Name,
                     email: authData.email,
                     userRefID: authData.userRefID,
                     encryptionKey: authData.encryptionKey,
@@ -361,7 +295,7 @@ export async function createUserCongregate(
     );
 }
 
-export async function updateUserCongregate(
+export function updateUserCongregate(
     userRefID: string,
     userData: UserUpdateInput,
     authData: AuthUpdateInput
@@ -375,23 +309,7 @@ export async function updateUserCongregate(
 
             const dataAuth = await tx.dataAuth.update({
                 where: { userId: user.id },
-                data: {
-                    ...(authData.userAuthID !== undefined
-                        ? { userAuthID: authData.userAuthID }
-                        : {}),
-                    ...(authData.Name !== undefined
-                        ? { name: authData.Name }
-                        : {}),
-                    ...(authData.email !== undefined
-                        ? { email: authData.email }
-                        : {}),
-                    ...(authData.userRefID !== undefined
-                        ? { userRefID: authData.userRefID }
-                        : {}),
-                    ...(authData.encryptionKey !== undefined
-                        ? { encryptionKey: authData.encryptionKey }
-                        : {})
-                }
+                data: buildAuthUpdate(authData)
             });
 
             return {
@@ -402,7 +320,7 @@ export async function updateUserCongregate(
     );
 }
 
-export async function deleteUserCongregate(userRefID: string) {
+export function deleteUserCongregate(userRefID: string) {
     return prisma.$transaction(
         async (tx: Prisma.TransactionClient) => {
             const user = await tx.user.findUniqueOrThrow({
@@ -425,13 +343,4 @@ export async function deleteUserCongregate(userRefID: string) {
             };
         }
     );
-}
-
-export function indicateUserCongregate(userRefID: string) {
-    return prisma.user.findUnique({
-        where: { userRefID },
-        include: {
-            dataAuth: true
-        }
-    });
 }

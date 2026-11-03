@@ -37,7 +37,7 @@ PORT=9800
 
 Notes:
 
-- The app reads the port from `PORT` (not `APP_PORT`). Without it, it listens on `9800`.
+- The app reads the port from `APP_PORT`. Without it, it listens on `9800`.
 - Never commit `.env` - it contains secrets (it is listed in `.gitignore` and `.dockerignore`).
 - `prisma/schema.prisma` (MongoDB) mirrors the same models and needs `DATABASE_URL`, but at runtime the app uses Mongoose, not Prisma. `DATABASE_URL` is only needed if you use [src/prismaDataManagement.ts](src/prismaDataManagement.ts) on its own.
 
@@ -92,6 +92,8 @@ npm run test:e2e    # e2e tests
 npm run test:cov    # coverage
 npm run lint        # oxlint
 ```
+
+For a practical guide to writing controller and service unit tests, see the [test-writing guide](./TESTING_GUIDE.md).
 
 ## Project structure
 
