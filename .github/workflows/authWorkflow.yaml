@@ -70,7 +70,7 @@ jobs:
         if: github.ref == 'refs/heads/master'
         run: npx prisma db push
         env:
-          DATABASE_URL: ${{ secrets.MONGODB_URI }}
+          MONGODB_URL: ${{ secrets.MONGODB_URI }}
 
       - name: "Publish JS filename"
         id: publishing
