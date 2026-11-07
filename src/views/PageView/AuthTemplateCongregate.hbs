@@ -20,7 +20,8 @@
     <p>Your user reference ID: {{user.userRefID}}</p>
 </div>
 
-<form action="/{{user._id}}" method="post" style="display: inline;">
+{{#if}}
+<form action="/{{user._id}}" method="post" style="display: inline;" id="authUsersForm" onclick="authoriseDataView()">
     <table class="table" style="width: 100%;">
         <tr>
             <th></th>
@@ -84,3 +85,6 @@
         </tr>
     </table>
 </form>
+{{/if}}
+
+<script src="../../../public/DataView.js"></script>

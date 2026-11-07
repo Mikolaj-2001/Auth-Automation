@@ -28,6 +28,22 @@ export class AuthConfigMiddleware implements NestMiddleware, CanActivate {
             try {
                 console.log('Token detected on the route ' + req.originalUrl)//originalUrl to właściwa ścieżka żądania,gdzie wykryto token
                 const verifiedToken = await this.authService.verifyToken(tokendetection);
+                const trueClientIp = req.ip ?? req.socket?.remoteAddress;
+                if (!trueClientIp || typeof verifiedToken.ip !== 'string') {
+                    throw new UnauthorizedException('IP address mismatch');
+                }
+                const partitionIp = verifiedToken.ip.split('|');
+                const [ipHash, accurateTimeStamp] = partitionIp;
+
+                if (partitionIp.length !== 2 || !ipHash || !accurateTimeStamp) {
+                    throw new UnauthorizedException('Invalid IP format in token');
+                }
+
+                const currentIpHash = this.authService.hashIp(trueClientIp);
+                if (currentIpHash !== ipHash) {
+                    res.clearCookie('jwt');
+                    throw new UnauthorizedException('IP address mismatch');
+                }
                 await this.authGuard.validateUserThroughToken(tokendetection, verifiedToken.id);
                 Object.assign(req, { user: verifiedToken });//tutaj przypisujemy zweryfikowany token do obiektu żądania jako właściwość 'user'
                 console.log('Verified token assigned to request object.Access granted.');

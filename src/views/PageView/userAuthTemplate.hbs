@@ -2,7 +2,7 @@
 
 {{#if error}}
 <div class="error-message">
-    {{message}}
+    {{error}}
 </div>
 {{/if}}
 
@@ -21,7 +21,7 @@
                 style="font-style: italic; color: red;">Delete
                 account</button>
         </form>
-        <form action="/auth/user/AuthTemplateCongregate/{{user._id}}" method="get" style="display: inline;">
+        <form action="/auth/user/AuthTemplateCongregate/{{user.userRefID}}" method="get" style="display: inline;">
             <button class="btn btn-sm btn-outline-secondary" type="submit" style="font-style: italic;">Profile
             </button>
         </form>

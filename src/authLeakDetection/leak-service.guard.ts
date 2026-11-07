@@ -50,8 +50,8 @@ export class LeakServiceGuard implements CanActivate {//CanActivate służy do o
         const realIp = req.ip || '127.0.0.1';//tutaj sprawdzamy standardowe IP klienta, a jeśli go nie ma, używamy localhost jako domyślnego.
         const claimedIp = [
             ...String(req.headers['x-forwarded-for'] ?? '').split(','),//... oznacza rozpakowanie tablicy na pojedyncze elementy w nowej tablicy
-            String(req.headers['cf-connecting-ip'] ?? ''),
-        ];
+            String(req.headers['cf-connecting-ip'] ?? ''),/* cf-connecting-ip header from Cloudflare,to identify the real client IP behind Cloudflare */
+        ];/* x-forwarded-for header from proxies, to identify the real client IP behind proxies */
         return claimedIp
             .map(ip => ip.trim().slice(0, 45)) //usuwamy ewentualne spacje z adresów IP
             .filter(ip => ip && ip !== realIp); //usuwamy puste adresy IP oraz adres IP klienta, aby uniknąć fałszywych zgłoszeń

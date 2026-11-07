@@ -13,6 +13,15 @@ import {
 
 @Schema({ timestamps: true })
 export class DataAuth extends Document {
+  @Prop({ required: true, unique: true, type: [String], default: [] })
+  knownIpHashes!: string[];
+
+  @Prop({ required: true, unique: true })
+  lastLoginIp?: string;
+
+  @Prop({ required: true })
+  lastLoginDate?: Date;
+
   @Prop({ required: true, type: Types.ObjectId, unique: true })
   @IsNotEmpty()
   @IsMongoId()
@@ -45,7 +54,7 @@ export class DataAuth extends Document {
   @IsEmail()
   email!: string;
 
-  @Prop({ required: true,unique: true, ref: 'User' })
+  @Prop({ required: true, unique: true, ref: 'User' })
   @IsNotEmpty()
   @IsString()
   userRefID!: string;

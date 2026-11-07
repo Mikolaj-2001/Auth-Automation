@@ -46,7 +46,7 @@ export class UserControllerController {
 
     @Post('register')
     @UseGuards(LeakServiceGuard)
-    async newRegistering(@Body() body: RegistrationBody, @Res() res: Response) {
+    async newRegistering(@Body() body: RegistrationBody, @Req() req: Request, @Res() res: Response) {
         const { confirmPassword, password, userName, Surname, email, PersonalID } = body;
         // The password is never sent back to the view
         const formUser = { userName, Surname, email, PersonalID };
@@ -67,12 +67,13 @@ export class UserControllerController {
 
             this.personalIDService.registerPersonalID(personalID);
             const authDTO = {
-                userAuthID: 0,
+                userAuthID: 0,//tu powinien być ID autoryzacji użytkownika, które zostanie przypisane po rejestracji w systemie auth
                 Name: userName,
                 email,
                 userRefID: new Types.ObjectId().toString(),
                 userId: new Types.ObjectId(),
             };
+
             const newUser = await this.userService.createUser(
                 { userName, Surname, email, password },
                 authDTO,
@@ -118,6 +119,7 @@ export class UserControllerController {
     @UseGuards(LeakServiceGuard)
     async loginUser(
         @Body() userLoggingIn: UserLoggingIn,
+        @Req() req: Request,
         @Res() res: Response,
     ) {
         const formUser = { email: userLoggingIn.email, userAuthID: userLoggingIn.userAuthID };
@@ -137,7 +139,10 @@ export class UserControllerController {
                     error: 'Invalid email, auth ID or password.',
                 });
             }
-            await this.authService.generateJwtToken(userLoggingIn.email, res);
+            const clientIp = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+
+            const { ipIdentifier } = await this.authService.registerNewIp(authData._id, clientIp);
+            await this.authService.generateJwtToken(userLoggingIn.email, res, ipIdentifier);
             return res.render('PageView/userAuthTemplate', {
                 user: user.toObject(),//pomaga to w renderowaniu danych użytkownika w szablonie
                 auth: authData.toObject(),
@@ -171,7 +176,7 @@ export class UserControllerController {
     }
 
     @Post('delete/:id')
-    @UseGuards(AuthConfigMiddleware, LeakServiceGuard)
+    @UseGuards(AuthConfigMiddleware, LeakServiceGuard, AuthGuard)
     async deleteUser(
         @Param('id')
         id: string,

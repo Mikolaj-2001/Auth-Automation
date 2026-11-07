@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { timingSafeEqual } from 'crypto';
+import { timingSafeEqual, createHmac } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
@@ -93,7 +93,7 @@ export class AuthServiceService {
   }
 
   //Modifikowanie struktury przyznawania tokenu JWT dla użytkownika
-  async generateJwtToken(identifier: string, res: Response): Promise<void> {
+  async generateJwtToken(identifier: string, res: Response, ipIdentifier: string): Promise<void> {
     const user = await this.findUserByDecryptedEmail(identifier);
     if (!user) {
       throw new UnauthorizedException('The specified user does not exist');
@@ -103,6 +103,7 @@ export class AuthServiceService {
       userName: user.userName,
       surname: user.Surname,
       userRefID: user.userRefID,
+      ipIdentifier: ipIdentifier,
     };
 
     const token = this.jwtService.sign(payload, {
@@ -124,6 +125,45 @@ export class AuthServiceService {
         'production' /* ustawienie przesyłania tylko przez żądanie HTTPS i ustawienie,aby działa w trybie produkcyjnym na serwerze HTTPS */,
       maxAge: 3600000 /* Długość ważności cookies */,
     }); /* Token JWT został ustawiony w ciasteczku */
+  }
+
+  public hashIp(ip: string): string {
+    return createHmac('sha256', this.configService.get<string>('IP_HASH_SECRET') ?? '')
+      .update(ip)
+      .digest('hex');// Zwracamy skrót IP w formie szesnastkowej, aby nie przechowywać go w postaci jawnej
+  }
+
+  private readonly accurateTimeStamp = new Date().toISOString().replace(
+    /\.(\d{3})Z$/,
+    (_, milliseconds) => `.${milliseconds}000000Z`,
+  );
+
+  async registerNewIp(authId: Types.ObjectId, clientIp: string): Promise<{ newIp: boolean, ipIdentifier: string }> {
+    const ipHash = this.hashIp(clientIp);
+    const auth = await this.dataAuthModel.findById(authId);
+
+    if (!auth) {
+      throw new UnauthorizedException('Authentication failed');
+    }
+
+    const ipIdentifier = `${ipHash}|${this.accurateTimeStamp}`;
+
+    const knownIpHashes = auth.knownIpHashes ?? [];
+    const newIp = !knownIpHashes.includes(ipIdentifier) &&
+      !knownIpHashes.some(hash => hash.split('|')[0] === ipHash);
+
+    const result = await this.dataAuthModel.updateOne(
+      { _id: authId },
+      {
+        $addToSet: { knownIpHashes: ipIdentifier },
+        $set: { lastLoginIp: clientIp, lastLoginDate: new Date() },
+      }
+    );
+    if (result.matchedCount !== 1) {
+      throw new UnauthorizedException('Authentication data not found');
+    }
+
+    return { newIp, ipIdentifier };
   }
 
   // Weryfikacja tokenu JWT z dodatkowymi zabezpieczeniami
@@ -195,3 +235,6 @@ export class AuthServiceService {
   }
 }
 
+function createIndexes(arg0: string) {
+  throw new Error('Function not implemented.');
+}

@@ -85,12 +85,15 @@ jobs:
     needs: build
     environment: testing
     env:
-      MONGODB_URL: mongodb+srv://mgafiuk2001_db_cluster:09041976Polska05@cluster1.lybdjmd.mongodb.net/${{ secrets.MONGO_DB_NAME }}?directConnection=true
+      MONGODB_URL: ${{ secrets.MONGODB_URL }}/${{ secrets.MONGO_DB_NAME }}?directConnection=true
       MONGODB_USER: ${{ secrets.MONGODB_USER }}
       JWT_AUTH_TOKEN: ${{ secrets.JWT_AUTH_TOKEN }}
       JWT_AUTH_TOKEN_EXPIRES_IN: 1h
       APP_PORT: 9800
     runs-on: ubuntu-latest
+    outputs:
+      unit-tests-outcome: ${{ steps.run-unit-tests.outcome }}
+      tests-outcome: ${{ steps.run-tests.outcome }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -109,7 +112,8 @@ jobs:
         run: npx prisma generate
 
       - name: Run Jest unit tests
-        run: npm test -- --runInBand
+        id: run-unit-tests
+        run: npm test -- --runInBand --outputFile=test-results/results.json
 
       - name: Run Server
         run: |
@@ -118,7 +122,7 @@ jobs:
 
       - name: Run Tests
         id: run-tests
-        run: npm test -- --json --outputFile=test-results/results.json
+        run: npm test -- --json --outputFile=test-results2/results2.json
         env:
           BASE_URL: http://localhost:9800
 
@@ -127,7 +131,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-artifacts
-          path: test-results
+          path: |
+            test-results
+            test-results2
 
   deploy:
     permissions:
@@ -144,7 +150,13 @@ jobs:
           path: dist
 
       - name: Output JS filenames
-        run: ls
+        run: ls dist
+
+      - name: Output unit tests result
+        run: echo "Unit tests (run-unit-tests) ${{ needs.test.outputs.unit-tests-outcome }}"
+
+      - name: Output tests result
+        run: echo "Tests (run-tests) ${{ needs.test.outputs.tests-outcome }}"
 
       - name: Output the filename
         run: echo "${{needs.build.outputs.script-file}}"

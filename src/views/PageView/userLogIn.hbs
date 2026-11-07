@@ -4,12 +4,19 @@
 
 {{#if error}}
 <div class="error-message">
-    {{message}}
+    {{error}}
 </div>
 {{/if}}
 
-<form method="POST" action="/login" id="loginForm">
+<form method="POST" action="/user/login" id="loginForm">
     <div class="row g-3 align-items-center" id="emailField" style="margin-bottom: 10px;">
+        <div class='col-auto' style="margin-bottom: 4px;">
+            <label for="userAuthID" class="email-input-label"
+                style="text-align: center; vertical-align: middle; width: 100%; display: inline-block;">Provide user
+                Auth ID</label>
+            <input type="text" name="userAuthID" id="userAuthID" class="form-control" value="{{user.userAuthID}}"
+                required style="margin-top: 2px;">
+        </div>
         <div class="col-auto" style="margin-bottom: 4px;">
             <label for="userName" class="userName-input-label"
                 style="text-align: center; vertical-align: middle; width: 100%; display: inline-block;">Provide

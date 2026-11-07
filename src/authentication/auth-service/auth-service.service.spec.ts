@@ -30,6 +30,7 @@ describe('AuthServiceService', () => {
     findById: jest.Mock;
     findOne: jest.Mock;
     deleteOne: jest.Mock;
+    updateOne: jest.Mock;
   };
   let userModel: Record<string, jest.Mock>;
   let jwtService: { sign: jest.Mock; verify: jest.Mock };
@@ -39,7 +40,7 @@ describe('AuthServiceService', () => {
     saveAuth = jest.fn();
     dataAuthModel = Object.assign(
       jest.fn((data: unknown) => ({ data, save: saveAuth })),
-      { findById: jest.fn(), findOne: jest.fn(), deleteOne: jest.fn() },
+      { findById: jest.fn(), findOne: jest.fn(), deleteOne: jest.fn(), updateOne: jest.fn() },
     );
     userModel = { find: jest.fn(), findById: jest.fn(), findOne: jest.fn(), deleteOne: jest.fn() };
     jwtService = { sign: jest.fn().mockReturnValue('signed-token'), verify: jest.fn() };
@@ -108,6 +109,36 @@ describe('AuthServiceService', () => {
 
       await expect(service.findAuthByUserRefID(`${VALID_ID}@5`)).resolves.toBe(doc);
       expect(dataAuthModel.findById).toHaveBeenCalledWith(VALID_ID);
+    });
+
+    describe('registerNewIp', () => {
+      it('stores the hash once and updates the latest login information', async () => {
+        const authId = new Types.ObjectId(VALID_ID);
+        const ip = '203.0.113.8';
+        const ipHash = service.hashIp(ip);
+        dataAuthModel.findById.mockResolvedValue({ knownIpHashes: [ipHash] });
+
+        await expect(service.registerNewIp(authId, ip)).resolves.toEqual({ newIp: false });
+
+        expect(dataAuthModel.updateOne).toHaveBeenCalledWith(
+          { _id: authId },
+          {
+            $addToSet: { knownIpHashes: ipHash },
+            $set: {
+              lastLoginIp: ip,
+              lastLoginDate: expect.any(Date),
+            },
+          },
+        );
+      });
+
+      it('reports an IP as new when its hash is not in the stored list', async () => {
+        dataAuthModel.findById.mockResolvedValue({ knownIpHashes: [] });
+
+        await expect(
+          service.registerNewIp(new Types.ObjectId(VALID_ID), '203.0.113.9'),
+        ).resolves.toEqual({ newIp: true });
+      });
     });
 
     it.each([[''], ['abc@1'], ['@1']])('returns null for %p', async (ref) => {//[''] oznacza pusty string
@@ -207,9 +238,10 @@ describe('AuthServiceService', () => {
 
     it('signs a token and stores it in an httpOnly cookie', async () => {
       const user = makeUser('a@b.com', 'pw');
+      const ip = '203.0.113.10';
       userModel.find.mockResolvedValue([user]);
 
-      await service.generateJwtToken('a@b.com', res as any);
+      await service.generateJwtToken('a@b.com', res as any, ip);
 
       expect(jwtService.sign).toHaveBeenCalledWith(
         {
@@ -217,6 +249,7 @@ describe('AuthServiceService', () => {
           userName: user.userName,
           surname: user.Surname,
           userRefID: user.userRefID,
+          ip: service.hashIp(ip),
         },
         expect.objectContaining({
           secret: 'secret',
@@ -239,7 +272,7 @@ describe('AuthServiceService', () => {
       );
       userModel.find.mockResolvedValue([makeUser('a@b.com', 'pw')]);//pw oznacza hasło użytkownika
 
-      await service.generateJwtToken('a@b.com', res as any);
+      await service.generateJwtToken('a@b.com', res as any, '203.0.113.10');
 
       expect(jwtService.sign).toHaveBeenCalledWith(
         expect.anything(),
@@ -250,7 +283,7 @@ describe('AuthServiceService', () => {
     it('throws and sets no cookie when the user does not exist', async () => {
       userModel.find.mockResolvedValue([]);
 
-      await expect(service.generateJwtToken('nobody@b.com', res as any)).rejects.toThrow(
+      await expect(service.generateJwtToken('nobody@b.com', res as any, '203.0.113.10')).rejects.toThrow(
         UnauthorizedException,
       );
       expect(jwtService.sign).not.toHaveBeenCalled();

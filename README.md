@@ -39,7 +39,8 @@ Notes:
 
 - The app reads the port from `APP_PORT`. Without it, it listens on `9800`.
 - Never commit `.env` - it contains secrets (it is listed in `.gitignore` and `.dockerignore`).
-- `prisma/schema.prisma` (MongoDB) mirrors the same models and needs `DATABASE_URL`, but at runtime the app uses Mongoose, not Prisma. `DATABASE_URL` is only needed if you use [src/prismaDataManagement.ts](src/prismaDataManagement.ts) on its own.
+- `prisma/schema.prisma` (MongoDB) mirrors the same models and needs `MONGODB_URL`, but at runtime the app uses Mongoose, not Prisma. `MONGODB_URL` is only needed if you use [src/prismaDataManagement.ts](src/prismaDataManagement.ts) on its own.
+- `DataAuth` keeps known IP hashes plus the latest login IP and date. The Prisma helpers in [src/prismaDataManagement.ts](src/prismaDataManagement.ts) can filter auth records by known IP hash, latest login IP, or login date.
 
 ## Running locally
 

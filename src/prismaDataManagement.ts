@@ -10,6 +10,9 @@ type AuthCreateInput = {
     userRefID: string;
     encryptionKey: string;
     userId: string;
+    knownIpHashes?: string[];
+    lastLoginIp?: string;
+    lastLoginDate?: Date;
 };
 
 type AuthUpdateInput = Partial<Omit<AuthCreateInput, 'userId'>>;
@@ -53,6 +56,9 @@ function buildAuthUpdate(authData: AuthUpdateInput): Prisma.DataAuthUncheckedUpd
         email: authData.email,
         userRefID: authData.userRefID,
         encryptionKey: authData.encryptionKey,
+        knownIpHashes: authData.knownIpHashes,
+        lastLoginIp: authData.lastLoginIp,
+        lastLoginDate: authData.lastLoginDate,
     };
 }
 
@@ -130,6 +136,41 @@ export function getUserById(id: string) {
 export function getDataAuthById(id: string) {
     return prisma.dataAuth.findUnique({
         where: { id }
+    });
+}
+
+export function getDataAuthsByKnownIpHash(ipHash: string) {
+    return prisma.dataAuth.findMany({
+        where: {
+            knownIpHashes: {
+                has: ipHash
+            }
+        },
+        include: {
+            user: true
+        }
+    });
+}
+
+export function getDataAuthsByLastLoginIp(ip: string) {
+    return prisma.dataAuth.findMany({
+        where: { lastLoginIp: ip },
+        include: {
+            user: true
+        }
+    });
+}
+
+export function getDataAuthsWithLastLoginAfter(date: Date) {
+    return prisma.dataAuth.findMany({
+        where: {
+            lastLoginDate: {
+                gt: date
+            }
+        },
+        include: {
+            user: true
+        }
     });
 }
 
@@ -220,7 +261,10 @@ export function createDataAuth(data: AuthCreateInput) {
             email: data.email,
             userRefID: data.userRefID,
             encryptionKey: data.encryptionKey,
-            userId: data.userId
+            userId: data.userId,
+            knownIpHashes: data.knownIpHashes ?? [],
+            lastLoginIp: data.lastLoginIp,
+            lastLoginDate: data.lastLoginDate
         },
         include: {
             user: true
@@ -283,7 +327,10 @@ export function createUserCongregate(
                     email: authData.email,
                     userRefID: authData.userRefID,
                     encryptionKey: authData.encryptionKey,
-                    userId: user.id
+                    userId: user.id,
+                    knownIpHashes: authData.knownIpHashes ?? [],
+                    lastLoginIp: authData.lastLoginIp,
+                    lastLoginDate: authData.lastLoginDate
                 }
             });
 
