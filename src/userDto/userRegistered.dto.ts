@@ -7,6 +7,7 @@ import {
   IsNumber,
 } from 'class-validator';
 import { Injectable } from '@nestjs/common';
+import { isSet } from 'node:util/types';
 
 export class UserNewLogin {
   @IsNotEmpty()
@@ -24,6 +25,11 @@ export class UserNewLogin {
 
   @IsNotEmpty()
   @IsNumber()
+  @IsStrongPassword({
+    minLength: 11,
+    minSymbols: 11,
+    minUppercase: 11,
+  })
   PersonalID!: number;
 
   @IsNotEmpty()

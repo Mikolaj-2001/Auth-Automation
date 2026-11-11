@@ -44,7 +44,7 @@
                 <strong>Email(confidential):</strong>
             </div>
             <div class="field-value">
-                {{user.email}}
+                {{user._id}}
             </div>
         </div>
 
@@ -59,10 +59,19 @@
 
         <div class="user-field">
             <div class="field-label">
-                <strong>User ID:</strong>
+                <strong>IpHash:</strong>
             </div>
             <div class="field-value">
-                {{user._id}}
+                {{ipInfo.ipHash}}
+            </div>
+        </div>
+
+        <div class="user-field">
+            <div class="field-label">
+                <strong>Last Login IP:</strong>
+            </div>
+            <div class="field-value">
+                {{ipInfo.lastLoginIp}}
             </div>
         </div>
     </div>

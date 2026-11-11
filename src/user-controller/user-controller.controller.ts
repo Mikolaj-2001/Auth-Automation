@@ -92,6 +92,16 @@ export class UserControllerController {
         }
     }
 
+    @Get('last-personal-id')
+    async getLastPersonalID() {
+        const lastPersonalID = this.userService.personalIDInfo();
+        return {
+            success: !!lastPersonalID,
+            lastPersonalID: lastPersonalID,
+            message: lastPersonalID ? 'Personal ID retrieved successfully' : 'No Personal ID found',
+        };
+    }
+
     @Get('register')
     @Render('PageView/userRegisteringForm')
     async showRegistrationForm() {

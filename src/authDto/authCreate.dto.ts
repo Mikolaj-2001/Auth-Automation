@@ -9,6 +9,18 @@ import {
 } from 'class-validator';
 
 export class AuthCreateDto {
+  @IsNotEmpty()
+  @IsString()
+  readonly knownIpHashes!: string[];
+
+  @IsNotEmpty()
+  @IsString()
+  readonly lastLoginIp!: string;
+
+  @IsNotEmpty()
+  @IsString()
+  readonly lastLoginDate!: string;
+
   @IsMongoId()
   readonly userID!: string;
 

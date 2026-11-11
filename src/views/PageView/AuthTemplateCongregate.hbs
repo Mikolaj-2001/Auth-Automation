@@ -20,69 +20,150 @@
     <p>Your user reference ID: {{user.userRefID}}</p>
 </div>
 
-{{#if}}
-<form action="/{{user._id}}" method="post" style="display: inline;" id="authUsersForm" onclick="authoriseDataView()">
+<button onclick="authoriseDataView()" type="button" id="authoriseDataViewButton">Authorise Data View</button>
+{{#if ipInfo.lastLoginIp }}
+<form action="/{{user._id}}" method="post" style="display: inline; filter: blur(10px);" id="authUsersForm">
     <table class="table" style="width: 100%;">
+        {{#each users}}
         <tr>
-            <th></th>
-            <td>
-
-            </td>
+            <th>userName</th>
+            <td>{{user.userName}}</td>
+            <th>email</th>
+            <td>{{user.email}}</td>
+            <th>ID</th>
+            <td>{{user._id}}</td>
+            <th>userRefID</th>
+            <td>{{user.userRefID}}</td>
+            <th>lastLoginIp</th>
+            <td>{{ipInfo.lastLoginIp}}</td>
         </tr>
+        {{/each}}
+        {{#each users}}
         <tr>
-            <th></th>
-            <td>
-
-            </td>
+            <th>userName</th>
+            <td>{{user.userName}}</td>
+            <th>email</th>
+            <td>{{user.email}}</td>
+            <th>ID</th>
+            <td>{{user._id}}</td>
+            <th>userRefID</th>
+            <td>{{user.userRefID}}</td>
+            <th>lastLoginIp</th>
+            <td>{{ipInfo.lastLoginIp}}</td>
         </tr>
+        {{/each}}
+        {{#each users}}
         <tr>
-            <th></th>
-            <td>
-
-            </td>
+            <th>userName</th>
+            <td>{{user.userName}}</td>
+            <th>email</th>
+            <td>{{user.email}}</td>
+            <th>ID</th>
+            <td>{{user._id}}</td>
+            <th>userRefID</th>
+            <td>{{user.userRefID}}</td>
+            <th>lastLoginIp</th>
+            <td>{{ipInfo.lastLoginIp}}</td>
         </tr>
+        {{/each}}
+        {{#each users}}
         <tr>
-            <th></th>
-            <td>
-
-            </td>
+            <th>userName</th>
+            <td>{{user.userName}}</td>
+            <th>email</th>
+            <td>{{user.email}}</td>
+            <th>ID</th>
+            <td>{{user._id}}</td>
+            <th>userRefID</th>
+            <td>{{user.userRefID}}</td>
+            <th>lastLoginIp</th>
+            <td>{{ipInfo.lastLoginIp}}</td>
         </tr>
+        {{/each}}
+        {{#each users}}
         <tr>
-            <th></th>
-            <td>
-
-            </td>
+            <th>userName</th>
+            <td>{{user.userName}}</td>
+            <th>email</th>
+            <td>{{user.email}}</td>
+            <th>ID</th>
+            <td>{{user._id}}</td>
+            <th>userRefID</th>
+            <td>{{user.userRefID}}</td>
+            <th>lastLoginIp</th>
+            <td>{{ipInfo.lastLoginIp}}</td>
         </tr>
+        {{/each}}
+        {{#each users}}
         <tr>
-            <th></th>
-            <td>
-
-            </td>
+            <th>userName</th>
+            <td>{{user.userName}}</td>
+            <th>email</th>
+            <td>{{user.email}}</td>
+            <th>ID</th>
+            <td>{{user._id}}</td>
+            <th>userRefID</th>
+            <td>{{user.userRefID}}</td>
+            <th>lastLoginIp</th>
+            <td>{{ipInfo.lastLoginIp}}</td>
         </tr>
+        {{/each}}
+        {{#each users}}
         <tr>
-            <th></th>
-            <td>
-
-            </td>
+            <th>userName</th>
+            <td>{{user.userName}}</td>
+            <th>email</th>
+            <td>{{user.email}}</td>
+            <th>ID</th>
+            <td>{{user._id}}</td>
+            <th>userRefID</th>
+            <td>{{user.userRefID}}</td>
+            <th>lastLoginIp</th>
+            <td>{{ipInfo.lastLoginIp}}</td>
         </tr>
+        {{/each}}
+        {{#each users}}
         <tr>
-            <th></th>
-            <td>
-
-            </td>
+            <th>userName</th>
+            <td>{{user.userName}}</td>
+            <th>email</th>
+            <td>{{user.email}}</td>
+            <th>ID</th>
+            <td>{{user._id}}</td>
+            <th>userRefID</th>
+            <td>{{user.userRefID}}</td>
+            <th>lastLoginIp</th>
+            <td>{{ipInfo.lastLoginIp}}</td>
         </tr>
+        {{/each}}
+        {{#each users}}
         <tr>
-            <th></th>
-            <td>
-
-            </td>
+            <th>userName</th>
+            <td>{{user.userName}}</td>
+            <th>email</th>
+            <td>{{user.email}}</td>
+            <th>ID</th>
+            <td>{{user._id}}</td>
+            <th>userRefID</th>
+            <td>{{user.userRefID}}</td>
+            <th>lastLoginIp</th>
+            <td>{{ipInfo.lastLoginIp}}</td>
         </tr>
+        {{/each}}
+        {{#each users}}
         <tr>
-            <th></th>
-            <td>
-
-            </td>
+            <th>userName</th>
+            <td>{{user.userName}}</td>
+            <th>email</th>
+            <td>{{user.email}}</td>
+            <th>ID</th>
+            <td>{{user._id}}</td>
+            <th>userRefID</th>
+            <td>{{user.userRefID}}</td>
+            <th>lastLoginIp</th>
+            <td>{{ipInfo.lastLoginIp}}</td>
         </tr>
+        {{/each}}
     </table>
 </form>
 {{/if}}

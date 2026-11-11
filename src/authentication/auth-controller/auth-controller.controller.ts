@@ -34,22 +34,36 @@ export class AuthController {
         const users = await this.userService.findAllUsers(userRefID, email);
         const user = userRefID ? await this.userService.findUserByRefId(userRefID) : null;
 
+        let existingAuth = null;
+        if (userRefID) {
+            existingAuth = await this.authService.findAuthByUserRefID(userRefID);
+        }
+
         const createAuthModel: AuthCreateDto = {
-            userID: new Types.ObjectId().toString(),
-            userAuthID: await this.userService.generateUserAuthID(),
+            knownIpHashes: existingAuth?.knownIpHashes ?? [],
+            lastLoginIp: existingAuth?.lastLoginIp ?? '',
+            lastLoginDate: existingAuth?.lastLoginDate?.toString() ?? '',
+            userID: existingAuth?.userId?.toString() ?? new Types.ObjectId().toString(),
+            userAuthID: existingAuth?.userAuthID ?? await this.userService.generateUserAuthID(),
             name: user?.userName ?? '',
             surname: user?.Surname ?? '',
             email: email ?? '',
             userRefID: userRefID ?? '',
         };
-        const authorisation = user && email
+        const authorisation = user && email && !existingAuth
             ? await this.authService.createAuth(createAuthModel)
-            : null;
+            : existingAuth;
         return {
             users,
             user,
             createAuthModel,
             authorisation,
+            ipInfo: {
+                lastLoginIp: existingAuth?.lastLoginIp ?? null,
+                lastLoginDate: existingAuth?.lastLoginDate ?? null,
+                knownIpCount: existingAuth?.knownIpHashes?.length ?? 0,
+                ipHistory: existingAuth?.knownIpHashes ?? [],
+            },
         };
     }
 
@@ -64,9 +78,19 @@ export class AuthController {
             throw new UnauthorizedException('You are not authorized to view this auth template.');
         }
         const auth = await this.authService.findAuthByUserRefID(userRefID);
+
+        const allUsers = await this.userService.findAllUsers();
+
         return {
             auth,
             user: req.user,
+            users: allUsers,
+            ipInfo: {
+                lastLoginIp: auth?.lastLoginIp ?? null,
+                lastLoginDate: auth?.lastLoginDate ?? null,
+                knownIpCount: auth?.knownIpHashes?.length ?? 0,
+                ipHistory: auth?.knownIpHashes ?? [],
+            },
         };
     }
 
