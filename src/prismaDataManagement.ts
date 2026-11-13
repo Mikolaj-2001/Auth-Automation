@@ -77,6 +77,20 @@ export async function connectPrismaClient(): Promise<void> {
     await prisma.$connect();
 }
 
+export async function connectToMongoDB() {
+    try {
+        await prisma.$connect();
+        console.log("You successfully connected to MongoDB!");
+        return prisma;
+    } catch (err) {
+        console.dir(err);
+    }
+}
+
+export async function disconnectFromMongoDB() {
+    await prisma.$disconnect();
+}
+
 export async function disconnectPrismaClient(): Promise<void> {
     await prisma.$disconnect();
 }

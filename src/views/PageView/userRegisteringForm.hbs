@@ -1,76 +1,94 @@
 {{> headers}}
-<h1>User Registering Form</h1>
 
-{{#if error}}
-<div class="error-message">
-    {{error}}
-</div>
-{{/if}}
+<div class="modern-page-wrapper">
+    <div class="modern-form-container auth-form-card">
+        <div class="modern-form-header">
+            <h1 class="modern-page-title"><i class="bi bi-person-plus-fill"></i> Create New Account</h1>
+        </div>
 
-<form action="/user/register" method="POST" id="registerForm">
-    <div class="row g-3 align-items-center" id="userNameField" style="margin-bottom: 10px;">
-        <div class="col-auto" style="margin-bottom: 4px;">
-            <label for="userName" class="userName-input-label"
-                style="text-align: center; vertical-align: middle; width: 100%; display: inline-block;">Provide
-                userName</label>
-            <input type="text" name="userName" id="userName" class="form-control" required style="margin-top: 2px;">
-        </div>
-        <div class="col-auto" style="margin-bottom: 4px;">
-            <label for="surName" class="surName-input-label"
-                style="text-align: center; vertical-align: middle; width: 100%; display: inline-block;">Provide
-                surname</label>
-            <input type="text" name="SurName" id="surName" class="form-control" required style="margin-top: 2px;">
-        </div>
-    </div>
-    <div class="row g-3 align-items-center" id="emailField" style="margin-bottom: 10px;">
-        <div class="col-auto" style="margin-bottom: 4px;">
-            <label for="email" class="email-input-label"
-                style="text-align: center; vertical-align: middle; width: 100%; display: inline-block;">Provide
-                email</label>
-            <input type="email" name="email" id="email" class="form-control" required style="margin-top: 2px;">
-        </div>
-    </div>
-    <div class="row g-3 align-items-center" id="personalIdInfoField" style="margin-bottom: 10px;">
-        <div class="col-auto" style="margin-bottom: 4px;">
-            <label for="personalIdInfo" class="personalIdInfo-input-label"
-                style="text-align: center; vertical-align: middle; width: 100%; display: inline-block;">Provide
-                personal ID</label>
-            <input type="number" name="personalIdInfo" id="personalIdInfo" class="form-control" required
-                style="margin-top: 2px;">
-        </div>
-        <div class="col-auto" style="margin-bottom: 4px;">
-            <span id="personalIdInfoHelpInline" class="form-text">
-                Personal ID must be a valid number consisting of digits only.
-            </span>
-        </div>
-    </div>
-    <div class="row g-3 align-items-center" id="passwordField" style="margin-bottom: 10px;">
-
-        <div class="col-auto" style="margin-bottom: 4px;">
-            <label for="password" class="password-input-label"
-                style="text-align: center; vertical-align: middle; width: 100%; display: inline-block;">Provide
-                password</label>
-            <input type="password" name="password" id="password" class="form-control" required style="margin-top: 2px;">
-        </div>
         {{#if error}}
-        <div class="col-auto" id="passwordError">
-            <span id="passwordHelpInline" class="form-text">
-                Password must contain at least 8 characters, including an uppercase letter, a lowercase letter, a
-                number, and a special character.
-            </span>
+        <div class="modern-error-alert alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> {{error}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         {{/if}}
+
+        <form action="/user/register" method="POST" id="registerForm" class="modern-form">
+            <div class="form-row-modern">
+                <div class="form-group-modern">
+                    <label for="userName" class="form-label-modern">
+                        <i class="bi bi-person-fill"></i> Username
+                    </label>
+                    <input type="text" name="userName" id="userName" class="form-control form-control-modern" 
+                        required placeholder="Choose your username">
+                </div>
+
+                <div class="form-group-modern">
+                    <label for="surName" class="form-label-modern">
+                        <i class="bi bi-person-badge-fill"></i> Surname
+                    </label>
+                    <input type="text" name="SurName" id="surName" class="form-control form-control-modern" 
+                        required placeholder="Enter your surname">
+                </div>
+            </div>
+
+            <div class="form-group-modern">
+                <label for="email" class="form-label-modern">
+                    <i class="bi bi-envelope-fill"></i> Email Address
+                </label>
+                <input type="email" name="email" id="email" class="form-control form-control-modern" 
+                    required placeholder="Enter your email address">
+            </div>
+
+            <div class="form-group-modern">
+                <label for="personalIdInfo" class="form-label-modern">
+                    <i class="bi bi-card-text"></i> Personal ID
+                </label>
+                <input type="number" name="personalIdInfo" id="personalIdInfo" class="form-control form-control-modern" 
+                    required placeholder="Enter your personal ID number">
+                <small class="form-text-info">
+                    <i class="bi bi-info-circle"></i> Personal ID must contain only digits.
+                </small>
+            </div>
+
+            <div class="form-group-modern">
+                <label for="password" class="form-label-modern">
+                    <i class="bi bi-key-fill"></i> Password
+                </label>
+                <input type="password" name="password" id="password" class="form-control form-control-modern" 
+                    required placeholder="Create a strong password">
+                {{#if error}}
+                <small class="form-text-error">
+                    <i class="bi bi-info-circle"></i> Password must contain at least 8 characters, 
+                    including uppercase, lowercase, number, and special character.
+                </small>
+                {{/if}}
+            </div>
+
+            <div class="form-actions-modern">
+                {{#if user.personalID}}
+                <button type="submit" class="btn btn-modern btn-info-modern" id="verifyButton" onclick="fetchLastPersonalID()">
+                    <i class="bi bi-shield-check"></i> Verify Personal ID
+                </button>
+                <button type="submit" class="btn btn-modern btn-primary-modern" id="registerButton">
+                    <i class="bi bi-check-circle-fill"></i> Register
+                </button>
+                {{else}}
+                <button type="submit" class="btn btn-modern btn-primary-modern w-100" id="registerButton">
+                    <i class="bi bi-check-circle-fill"></i> Create Account
+                </button>
+                {{/if}}
+            </div>
+        </form>
+
+        <div class="modern-form-footer">
+            <p class="text-center mb-0">Already have an account? <a href="/user/login" class="modern-link-inline">Log in here</a></p>
+        </div>
     </div>
-    <div class="col-auto" id="submitButton" style="margin-bottom: 8px;">
-        {{#if user.personalID}}
-        <button type="submit" class="btn btn-primary" id="registerButton"
-            style="margin-bottom: 0; display: inline-block;">Register</button>
-        {{/if}}
-    </div>
-</form>
-<br>
-<footer>
-    <p>&copy; 2024 Auth Automation. All rights reserved to the author:Mikołaj Gafiuk</p>
+</div>
+
+<footer class="modern-footer">
+    <p><i class="bi bi-shield-check"></i> &copy; 2024 Auth Automation. All rights reserved to the author: Mikołaj Gafiuk</p>
 </footer>
 
 <script src="../../../public/personalIdFetch.js"></script>

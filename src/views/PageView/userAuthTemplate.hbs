@@ -1,79 +1,111 @@
 {{> headers}}
 
-{{#if error}}
-<div class="error-message">
-    {{error}}
-</div>
-{{/if}}
-
-<nav class="navbar bg-body-tertiary" id="navbar">
-    <div class="container-fluid justify-content-start" id="sub-navbar">
-        <form action="/user/logout" method="post" style="display: inline;">
-            <button class="btn btn-outline-success me-2" type="submit" style="font-style: italic;">Log out</button>
-        </form>
-        <form action="/user/register" method="get">
-            <button class="btn btn-sm btn-outline-secondary" type="submit" style="font-style: italic;">Register
-            </button>
-        </form>
-        <form action="/user/delete/{{user._id}}" method="post"
-            onsubmit="return confirm('Are you sure you want to delete your account? This operation is irreversible!');">
-            <button class="btn btn-sm btn-outline-secondary" type="submit"
-                style="font-style: italic; color: red;">Delete
-                account</button>
-        </form>
-        <form action="/auth/user/AuthTemplateCongregate/{{user.userRefID}}" method="get" style="display: inline;">
-            <button class="btn btn-sm btn-outline-secondary" type="submit" style="font-style: italic;">Profile
-            </button>
-        </form>
+<div class="modern-page-wrapper">
+    {{#if error}}
+    <div class="modern-error-alert alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i> {{error}}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-</nav>
-<div class="user-page" id="user-page">
-    <div class="user-info" id="user-details" style="
-    font-style:italic; background-color: #063ba4; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-        <div class="user-field">
-            <div class="field-label">
-                <strong>User-Name:</strong>
-            </div>
-            <div class="field-value">
-                {{user.userName}}
-            </div>
-        </div>
+    {{/if}}
 
-        <div class="user-field">
-            <div class="field-label">
-                <strong>Email(confidential):</strong>
+    <div class="modern-navbar navbar-modern">
+        <div class="navbar-container">
+            <div class="navbar-brand-modern">
+                <h2 class="mb-0"><i class="bi bi-shield-lock"></i> User Dashboard</h2>
             </div>
-            <div class="field-value">
-                {{user._id}}
-            </div>
-        </div>
-
-        <div class="user-field">
-            <div class="field-label">
-                <strong>UserRefID:</strong>
-            </div>
-            <div class="field-value">
-                {{user.userRefID}}
-            </div>
-        </div>
-
-        <div class="user-field">
-            <div class="field-label">
-                <strong>IpHash:</strong>
-            </div>
-            <div class="field-value">
-                {{ipInfo.ipHash}}
-            </div>
-        </div>
-
-        <div class="user-field">
-            <div class="field-label">
-                <strong>Last Login IP:</strong>
-            </div>
-            <div class="field-value">
-                {{ipInfo.lastLoginIp}}
+            <div class="navbar-actions">
+                <form action="/user/logout" method="post" class="navbar-form">
+                    <button class="btn btn-modern btn-outline-success-modern" type="submit">
+                        <i class="bi bi-box-arrow-right"></i> Log Out
+                    </button>
+                </form>
+                <form action="/auth/user/AuthTemplateCongregate/{{user.userRefID}}" method="get" class="navbar-form">
+                    <button class="btn btn-modern btn-secondary-modern" type="submit">
+                        <i class="bi bi-person-circle"></i> My Profile
+                    </button>
+                </form>
+                <form action="/user/register" method="get" class="navbar-form">
+                    <button class="btn btn-modern btn-secondary-modern" type="submit">
+                        <i class="bi bi-person-plus"></i> Register Another
+                    </button>
+                </form>
+                <form action="/user/delete/{{user._id}}" method="post" 
+                    onsubmit="return confirm('⚠️ Are you sure? This action is permanent and cannot be undone!');" 
+                    class="navbar-form">
+                    <button class="btn btn-modern btn-danger-modern" type="submit">
+                        <i class="bi bi-trash-fill"></i> Delete Account
+                    </button>
+                </form>
             </div>
         </div>
     </div>
-    <br>
+
+    <div class="user-details-card modern-card">
+        <div class="card-header-modern">
+            <h3><i class="bi bi-person-vcard-fill"></i> Account Information</h3>
+        </div>
+        <div class="card-body-modern">
+            <div class="user-info-grid">
+                <div class="user-field-modern">
+                    <div class="field-icon-label">
+                        <i class="bi bi-person-fill field-icon"></i>
+                        <span class="field-label">Username</span>
+                    </div>
+                    <div class="field-value-modern">{{user.userName}}</div>
+                </div>
+
+                <div class="user-field-modern">
+                    <div class="field-icon-label">
+                        <i class="bi bi-envelope-fill field-icon"></i>
+                        <span class="field-label">Email Address</span>
+                    </div>
+                    <div class="field-value-modern">{{user.email}}</div>
+                </div>
+
+                <div class="user-field-modern">
+                    <div class="field-icon-label">
+                        <i class="bi bi-key-fill field-icon"></i>
+                        <span class="field-label">User ID</span>
+                    </div>
+                    <div class="field-value-modern user-id-monospace">{{user._id}}</div>
+                </div>
+
+                <div class="user-field-modern">
+                    <div class="field-icon-label">
+                        <i class="bi bi-link-45deg field-icon"></i>
+                        <span class="field-label">User Reference ID</span>
+                    </div>
+                    <div class="field-value-modern user-id-monospace">{{user.userRefID}}</div>
+                </div>
+
+                <div class="user-field-modern">
+                    <div class="field-icon-label">
+                        <i class="bi bi-shield-check field-icon"></i>
+                        <span class="field-label">Auth ID</span>
+                    </div>
+                    <div class="field-value-modern user-id-monospace">{{user.userAuthID}}</div>
+                </div>
+
+                <div class="user-field-modern">
+                    <div class="field-icon-label">
+                        <i class="bi bi-shield-lock field-icon"></i>
+                        <span class="field-label">IP Hash</span>
+                    </div>
+                    <div class="field-value-modern user-id-monospace">{{ipInfo.ipHash}}</div>
+                </div>
+
+                <div class="user-field-modern">
+                    <div class="field-icon-label">
+                        <i class="bi bi-globe-fill field-icon"></i>
+                        <span class="field-label">Last Login IP</span>
+                    </div>
+                    <div class="field-value-modern">{{ipInfo.lastLoginIp}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<footer class="modern-footer">
+    <p><i class="bi bi-shield-check"></i> &copy; 2024 Auth Automation. All rights reserved to the author: Mikołaj Gafiuk</p>
+</footer>

@@ -1,171 +1,106 @@
 {{> headers}}
 
-{{#if error}}
-<div class="error-message">
-    {{message}}
-</div>
-{{/if}}
-
-<nav class="navbar bg-body-tertiary" id="navbar">
-    <div class="container-fluid justify-content-start" id="sub-navbar">
-        <form action="/auth/user/userAuthTemplate/{{user._id}}" method="get" style="display: inline;">
-            <button class="btn btn-outline-success me-2" type="submit" style="font-style: italic;">Log out</button>
-        </form>
+<div class="modern-page-wrapper">
+    {{#if error}}
+    <div class="modern-error-alert alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i> {{message}}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-</nav>
-<div>
-    <h1>Welcome, {{user.userName}}</h1>
-    <p>Your email: {{user.email}}</p>
-    <p>Your ID: {{user._id}}</p>
-    <p>Your user reference ID: {{user.userRefID}}</p>
+    {{/if}}
+
+    <div class="modern-navbar navbar-modern">
+        <div class="navbar-container">
+            <div class="navbar-brand-modern">
+                <h2 class="mb-0"><i class="bi bi-shield-lock"></i> User Dashboard</h2>
+            </div>
+            <div class="navbar-actions">
+                <form action="/auth/user/userAuthTemplate/{{user._id}}" method="get" class="navbar-form">
+                    <button class="btn btn-modern btn-outline-success-modern" type="submit">
+                        <i class="bi bi-box-arrow-right"></i> Log Out
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modern-card welcome-card">
+        <div class="card-header-modern">
+            <h3><i class="bi bi-hand-thumbs-up-fill"></i> Welcome, {{user.userName}}!</h3>
+        </div>
+        <div class="card-body-modern">
+            <div class="welcome-info-grid">
+                <div class="welcome-field">
+                    <i class="bi bi-envelope-fill welcome-icon"></i>
+                    <div>
+                        <small class="welcome-label">Email Address</small>
+                        <p class="welcome-value">{{user.email}}</p>
+                    </div>
+                </div>
+
+                <div class="welcome-field">
+                    <i class="bi bi-key-fill welcome-icon"></i>
+                    <div>
+                        <small class="welcome-label">User ID</small>
+                        <p class="welcome-value user-id-monospace">{{user._id}}</p>
+                    </div>
+                </div>
+
+                <div class="welcome-field">
+                    <i class="bi bi-link-45deg welcome-icon"></i>
+                    <div>
+                        <small class="welcome-label">Reference ID</small>
+                        <p class="welcome-value user-id-monospace">{{user.userRefID}}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="auth-button-container">
+                <button onclick="authoriseDataView()" type="button" class="btn btn-modern btn-primary-modern btn-lg" id="authoriseDataViewButton">
+                    <i class="bi bi-unlock-fill"></i> Authorize Data View
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{#if ipInfo.lastLoginIp }}
+    <div class="modern-card data-table-card">
+        <div class="card-header-modern">
+            <h3><i class="bi bi-table"></i> User Data</h3>
+        </div>
+        <div class="card-body-modern table-responsive-modern">
+            <form action="/{{user._id}}" method="post" id="authUsersForm">
+                <table class="table table-modern">
+                    <thead>
+                        <tr class="table-header-modern">
+                            <th><i class="bi bi-person-fill"></i> Username</th>
+                            <th><i class="bi bi-envelope-fill"></i> Email</th>
+                            <th><i class="bi bi-key-fill"></i> ID</th>
+                            <th><i class="bi bi-link-45deg"></i> Ref ID</th>
+                            <th><i class="bi bi-shield-check"></i> Auth ID</th>
+                            <th><i class="bi bi-globe-fill"></i> Last IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each users}}
+                        <tr class="table-row-modern">
+                            <td data-label="Username"><strong>{{user.userName}}</strong></td>
+                            <td data-label="Email">{{user.email}}</td>
+                            <td data-label="ID"><code>{{user._id}}</code></td>
+                            <td data-label="Ref ID"><code>{{user.userRefID}}</code></td>
+                            <td data-label="Auth ID"><code>{{user.userAuthID}}</code></td>
+                            <td data-label="Last IP">{{ipInfo.lastLoginIp}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </form>
+        </div>
+    </div>
+    {{/if}}
 </div>
 
-<button onclick="authoriseDataView()" type="button" id="authoriseDataViewButton">Authorise Data View</button>
-{{#if ipInfo.lastLoginIp }}
-<form action="/{{user._id}}" method="post" style="display: inline; filter: blur(10px);" id="authUsersForm">
-    <table class="table" style="width: 100%;">
-        {{#each users}}
-        <tr>
-            <th>userName</th>
-            <td>{{user.userName}}</td>
-            <th>email</th>
-            <td>{{user.email}}</td>
-            <th>ID</th>
-            <td>{{user._id}}</td>
-            <th>userRefID</th>
-            <td>{{user.userRefID}}</td>
-            <th>lastLoginIp</th>
-            <td>{{ipInfo.lastLoginIp}}</td>
-        </tr>
-        {{/each}}
-        {{#each users}}
-        <tr>
-            <th>userName</th>
-            <td>{{user.userName}}</td>
-            <th>email</th>
-            <td>{{user.email}}</td>
-            <th>ID</th>
-            <td>{{user._id}}</td>
-            <th>userRefID</th>
-            <td>{{user.userRefID}}</td>
-            <th>lastLoginIp</th>
-            <td>{{ipInfo.lastLoginIp}}</td>
-        </tr>
-        {{/each}}
-        {{#each users}}
-        <tr>
-            <th>userName</th>
-            <td>{{user.userName}}</td>
-            <th>email</th>
-            <td>{{user.email}}</td>
-            <th>ID</th>
-            <td>{{user._id}}</td>
-            <th>userRefID</th>
-            <td>{{user.userRefID}}</td>
-            <th>lastLoginIp</th>
-            <td>{{ipInfo.lastLoginIp}}</td>
-        </tr>
-        {{/each}}
-        {{#each users}}
-        <tr>
-            <th>userName</th>
-            <td>{{user.userName}}</td>
-            <th>email</th>
-            <td>{{user.email}}</td>
-            <th>ID</th>
-            <td>{{user._id}}</td>
-            <th>userRefID</th>
-            <td>{{user.userRefID}}</td>
-            <th>lastLoginIp</th>
-            <td>{{ipInfo.lastLoginIp}}</td>
-        </tr>
-        {{/each}}
-        {{#each users}}
-        <tr>
-            <th>userName</th>
-            <td>{{user.userName}}</td>
-            <th>email</th>
-            <td>{{user.email}}</td>
-            <th>ID</th>
-            <td>{{user._id}}</td>
-            <th>userRefID</th>
-            <td>{{user.userRefID}}</td>
-            <th>lastLoginIp</th>
-            <td>{{ipInfo.lastLoginIp}}</td>
-        </tr>
-        {{/each}}
-        {{#each users}}
-        <tr>
-            <th>userName</th>
-            <td>{{user.userName}}</td>
-            <th>email</th>
-            <td>{{user.email}}</td>
-            <th>ID</th>
-            <td>{{user._id}}</td>
-            <th>userRefID</th>
-            <td>{{user.userRefID}}</td>
-            <th>lastLoginIp</th>
-            <td>{{ipInfo.lastLoginIp}}</td>
-        </tr>
-        {{/each}}
-        {{#each users}}
-        <tr>
-            <th>userName</th>
-            <td>{{user.userName}}</td>
-            <th>email</th>
-            <td>{{user.email}}</td>
-            <th>ID</th>
-            <td>{{user._id}}</td>
-            <th>userRefID</th>
-            <td>{{user.userRefID}}</td>
-            <th>lastLoginIp</th>
-            <td>{{ipInfo.lastLoginIp}}</td>
-        </tr>
-        {{/each}}
-        {{#each users}}
-        <tr>
-            <th>userName</th>
-            <td>{{user.userName}}</td>
-            <th>email</th>
-            <td>{{user.email}}</td>
-            <th>ID</th>
-            <td>{{user._id}}</td>
-            <th>userRefID</th>
-            <td>{{user.userRefID}}</td>
-            <th>lastLoginIp</th>
-            <td>{{ipInfo.lastLoginIp}}</td>
-        </tr>
-        {{/each}}
-        {{#each users}}
-        <tr>
-            <th>userName</th>
-            <td>{{user.userName}}</td>
-            <th>email</th>
-            <td>{{user.email}}</td>
-            <th>ID</th>
-            <td>{{user._id}}</td>
-            <th>userRefID</th>
-            <td>{{user.userRefID}}</td>
-            <th>lastLoginIp</th>
-            <td>{{ipInfo.lastLoginIp}}</td>
-        </tr>
-        {{/each}}
-        {{#each users}}
-        <tr>
-            <th>userName</th>
-            <td>{{user.userName}}</td>
-            <th>email</th>
-            <td>{{user.email}}</td>
-            <th>ID</th>
-            <td>{{user._id}}</td>
-            <th>userRefID</th>
-            <td>{{user.userRefID}}</td>
-            <th>lastLoginIp</th>
-            <td>{{ipInfo.lastLoginIp}}</td>
-        </tr>
-        {{/each}}
-    </table>
-</form>
-{{/if}}
+<footer class="modern-footer">
+    <p><i class="bi bi-shield-check"></i> &copy; 2024 Auth Automation. All rights reserved to the author: Mikołaj Gafiuk</p>
+</footer>
 
 <script src="../../../public/DataView.js"></script>

@@ -1,5 +1,5 @@
 async function fetchLastPersonalID() {
-  const button = document.getElementById('registerButton');
+  const button = document.getElementById('verifyButton');
   if (!button) {
     return;
   }
@@ -20,6 +20,7 @@ async function fetchLastPersonalID() {
       typeof error === 'string' || error instanceof Error;
       if (typeof error === 'string') {
         console.error('Failed to fetch last personal ID:', error);
+        document.getElementById('registerButton').style.filter = 'blur(10px)';
         document.getElementById('registerButton').style.display =
           'inline-block';
       }
