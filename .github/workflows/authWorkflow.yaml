@@ -67,6 +67,9 @@ jobs:
       - name: Build Project
         run: npm run build
 
+      - name: Show runner public IP
+        run: curl -4 https://api.ipify.org
+
       - name: Push Prisma schema to database
         if: github.ref == 'refs/heads/master'
         run: npx prisma db push
