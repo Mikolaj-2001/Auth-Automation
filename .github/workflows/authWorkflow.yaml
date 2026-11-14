@@ -70,10 +70,6 @@ jobs:
       - name: Show runner public IP
         run: curl -4 https://api.ipify.org
 
-      - name: Push Prisma schema to database
-        if: github.ref == 'refs/heads/master'
-        run: npx prisma db push
-
       - name: "Publish JS filename"
         id: publishing
         run: node -e "const fs = require('node:fs'); const file = fs.readdirSync('dist').find((name) => name.endsWith('.js')); if (file) fs.appendFileSync(process.env.GITHUB_OUTPUT, 'script-file=' + file + require('node:os').EOL)";
@@ -82,6 +78,21 @@ jobs:
         with:
           name: ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-${{ matrix.node-version }}
           path: dist
+
+  push-schema:
+    if: github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: [self-hosted, label-Wsx64]
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - run: npm ci
+      - run: npx prisma db push
 
   test:
     needs: build
