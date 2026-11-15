@@ -111,12 +111,23 @@ jobs:
     environment: testing
     env:
       MONGODB_URL: ${{ secrets.MONGODB_URL }}
+      MONGODB_URI: mongodb://127.0.0.1:27017/auth-automation
       MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
       MONGODB_USER: ${{ secrets.MONGODB_USER }}
       JWT_AUTH_TOKEN: ${{ secrets.JWT_AUTH_TOKEN }}
       JWT_AUTH_TOKEN_EXPIRES_IN: 1h
       APP_PORT: 9800
     runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     outputs:
       unit-tests-outcome: ${{ steps.run-unit-tests.outcome }}
       tests-outcome: ${{ steps.run-tests.outcome }}
