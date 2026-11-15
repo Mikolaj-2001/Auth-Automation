@@ -111,6 +111,7 @@ jobs:
     environment: testing
     env:
       MONGODB_URL: ${{ secrets.MONGODB_URL }}
+      MONGODB_URI: ${{ secrets.MONGODB_URL }}
       MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
       MONGODB_USER: ${{ secrets.MONGODB_USER }}
       JWT_AUTH_TOKEN: ${{ secrets.JWT_AUTH_TOKEN }}
