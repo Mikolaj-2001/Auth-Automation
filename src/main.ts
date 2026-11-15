@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { AppModule, ObserveInstrument } from './app.module';
+import { AppModule } from './app.module';
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 import { join } from 'path';
@@ -8,9 +8,7 @@ const hbs: any = require('hbs');
 import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    instrument: ObserveInstrument,
-  });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.set('trust proxy', true); // Ustawienie zaufania dla nagłówków proxy, np. X-Forwarded-For, aby poprawnie identyfikować adres IP klienta
 
   app.useGlobalPipes(new ValidationPipe({
