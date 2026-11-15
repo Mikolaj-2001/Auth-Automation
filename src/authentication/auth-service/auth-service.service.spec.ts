@@ -74,7 +74,10 @@ describe('AuthServiceService', () => {
       surname: 'User',
       email: 'test@example.com',
       userRefID: `${VALID_ID}@1`,
-    };
+      knownIpHashes: [],
+      lastLoginIp: '127.0.0.1',
+      lastLoginDate: new Date(),
+    } as any;
 
     it('maps the DTO to the DataAuth schema and saves it', async () => {
       saveAuth.mockResolvedValue({ id: 1, name: 'Test Auth' });
@@ -109,36 +112,6 @@ describe('AuthServiceService', () => {
 
       await expect(service.findAuthByUserRefID(`${VALID_ID}@5`)).resolves.toBe(doc);
       expect(dataAuthModel.findById).toHaveBeenCalledWith(VALID_ID);
-    });
-
-    describe('registerNewIp', () => {
-      it('stores the hash once and updates the latest login information', async () => {
-        const authId = new Types.ObjectId(VALID_ID);
-        const ip = '203.0.113.8';
-        const ipHash = service.hashIp(ip);
-        dataAuthModel.findById.mockResolvedValue({ knownIpHashes: [ipHash] });
-
-        await expect(service.registerNewIp(authId, ip)).resolves.toEqual({ newIp: false });
-
-        expect(dataAuthModel.updateOne).toHaveBeenCalledWith(
-          { _id: authId },
-          {
-            $addToSet: { knownIpHashes: ipHash },
-            $set: {
-              lastLoginIp: ip,
-              lastLoginDate: expect.any(Date),
-            },
-          },
-        );
-      });
-
-      it('reports an IP as new when its hash is not in the stored list', async () => {
-        dataAuthModel.findById.mockResolvedValue({ knownIpHashes: [] });
-
-        await expect(
-          service.registerNewIp(new Types.ObjectId(VALID_ID), '203.0.113.9'),
-        ).resolves.toEqual({ newIp: true });
-      });
     });
 
     it.each([[''], ['abc@1'], ['@1']])('returns null for %p', async (ref) => {//[''] oznacza pusty string
@@ -249,7 +222,7 @@ describe('AuthServiceService', () => {
           userName: user.userName,
           surname: user.Surname,
           userRefID: user.userRefID,
-          ip: service.hashIp(ip),
+          ipIdentifier: ip,
         },
         expect.objectContaining({
           secret: 'secret',
@@ -289,6 +262,100 @@ describe('AuthServiceService', () => {
       expect(jwtService.sign).not.toHaveBeenCalled();
       expect(res.cookie).not.toHaveBeenCalled();
     });
+
+    it('sets secure cookie in production environment', async () => {
+      const original = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      
+      const user = makeUser('a@b.com', 'pw');
+      userModel.find.mockResolvedValue([user]);
+
+      await service.generateJwtToken('a@b.com', res as any, '203.0.113.10');
+
+      expect(res.cookie).toHaveBeenCalledWith(
+        'jwt',
+        expect.anything(),
+        expect.objectContaining({ secure: true }),// ensure secure cookie in production environment
+      );
+
+      process.env.NODE_ENV = original;
+    });
+  });
+
+  describe('hashIp', () => {
+    it('returns a hexadecimal hash for an IP address', () => {
+      const hash = service.hashIp('203.0.113.10');
+      expect(/^[0-9a-f]+$/.test(hash)).toBe(true);
+    });
+
+    it('returns consistent hash for the same IP', () => {
+      const ip = '203.0.113.10';
+      const hash1 = service.hashIp(ip);
+      const hash2 = service.hashIp(ip);
+      expect(hash1).toBe(hash2);
+    });
+
+    it('returns different hashes for different IPs', () => {
+      const hash1 = service.hashIp('203.0.113.10');
+      const hash2 = service.hashIp('203.0.113.11');
+      expect(hash1).not.toBe(hash2);
+    });
+  });
+
+  describe('registerNewIp', () => {
+    it('stores a new IP hash and updates login information', async () => {
+      const authId = new Types.ObjectId(VALID_ID);
+      const ip = '203.0.113.10';
+      dataAuthModel.findById.mockResolvedValue({ knownIpHashes: [] });
+      dataAuthModel.updateOne.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+
+      const result = await service.registerNewIp(authId, ip);
+
+      expect(result.newIp).toBe(true);
+      expect(typeof result.ipIdentifier).toBe('string');
+      expect(dataAuthModel.updateOne).toHaveBeenCalledWith(
+        { _id: authId },
+        expect.objectContaining({
+          $addToSet: expect.any(Object),
+          $set: expect.objectContaining({
+            lastLoginIp: ip,
+            lastLoginDate: expect.any(Date),
+          }),
+        }),
+      );
+    });
+
+    it('does not mark IP as new when it already exists', async () => {
+      const authId = new Types.ObjectId(VALID_ID);
+      const ip = '203.0.113.10';
+      const ipHash = service.hashIp(ip);
+      const knownIpIdentifier = `${ipHash}|2024-01-01T00:00:00.000000Z`;
+      dataAuthModel.findById.mockResolvedValue({ knownIpHashes: [knownIpIdentifier] });
+      dataAuthModel.updateOne.mockResolvedValue({ matchedCount: 1, modifiedCount: 0 });
+
+      const result = await service.registerNewIp(authId, ip);
+
+      expect(result.newIp).toBe(false);
+    });
+
+    it('throws when the auth document is not found', async () => {
+      const authId = new Types.ObjectId(VALID_ID);
+      dataAuthModel.findById.mockResolvedValue(null);
+
+      await expect(service.registerNewIp(authId, '203.0.113.10')).rejects.toThrow(
+        'Authentication failed',
+      );
+    });
+
+    it('throws when the update does not match any documents', async () => {
+      const authId = new Types.ObjectId(VALID_ID);
+      dataAuthModel.findById.mockResolvedValue({ knownIpHashes: [] });
+      dataAuthModel.updateOne.mockResolvedValue({ matchedCount: 0 });
+
+      await expect(service.registerNewIp(authId, '203.0.113.10')).rejects.toThrow(
+        'Authentication data not found',
+      );
+    });
   });
 
   describe('verifyToken', () => {
@@ -323,6 +390,14 @@ describe('AuthServiceService', () => {
       userModel.findById.mockResolvedValue(null);
 
       await expect(service.verifyToken('token')).rejects.toThrow('Invalid token');
+    });
+
+    it('throws for invalid signature', async () => {
+      jwtService.verify.mockImplementation(() => {
+        throw new Error('invalid signature');
+      });
+
+      await expect(service.verifyToken('bad-token')).rejects.toThrow('Invalid token');
     });
   });
 

@@ -91,8 +91,20 @@ jobs:
         with:
           node-version: "24"
 
-      - run: npm ci
-      - run: npx prisma db push
+      - name: Cache node_modules
+        id: cache-dependencies
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
+          restore-keys: | 
+            ${{ runner.os }}-node-24-
+
+      - name: Install Dependencies
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Push Prisma Schema
+        run: npx prisma db push
 
   test:
     needs: build

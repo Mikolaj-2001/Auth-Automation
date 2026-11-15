@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Types } from 'mongoose';
+import { UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth-controller.controller';
 import { AuthServiceService } from '../auth-service/auth-service.service';
 import { UserServiceService } from '../../user-service/user-service.service';
@@ -9,6 +10,7 @@ describe('AuthController', () => {
   let controller: AuthController;
   let authService: {
     createAuth: jest.Mock;
+    findAuthByUserRefID: jest.Mock;
     updateAuth: jest.Mock;
     deleteSelection: jest.Mock;
   };
@@ -21,6 +23,7 @@ describe('AuthController', () => {
   beforeEach(async () => {
     authService = {
       createAuth: jest.fn(),
+      findAuthByUserRefID: jest.fn(),
       updateAuth: jest.fn(),
       deleteSelection: jest.fn(),
     };
@@ -34,7 +37,6 @@ describe('AuthController', () => {
       controllers: [AuthController],
       providers: [
         { provide: AuthServiceService, useValue: authService },
-        //  { provide: AuthService, useValue: authService },
         { provide: UserServiceService, useValue: userService },
       ],
     })
@@ -63,6 +65,9 @@ describe('AuthController', () => {
       expect(result.user).toBeNull();
       expect(result.authorisation).toBeNull();
       expect(result.createAuthModel).toEqual({
+        knownIpHashes: [],
+        lastLoginIp: '',
+        lastLoginDate: '',
         userID: expect.any(String),
         userAuthID: 42,
         name: '',
@@ -71,6 +76,20 @@ describe('AuthController', () => {
         userRefID: '',
       });
       expect(Types.ObjectId.isValid(result.createAuthModel.userID)).toBe(true);
+    });
+
+    it('returns ipInfo when no existing auth is found', async () => {
+      userService.findAllUsers.mockResolvedValue([]);
+      authService.findAuthByUserRefID.mockResolvedValue(null);
+
+      const result = await controller.getUser();
+
+      expect(result.ipInfo).toEqual({
+        lastLoginIp: null,
+        lastLoginDate: null,
+        knownIpCount: 0,
+        ipHistory: [],
+      });
     });
 
     it('returns the user but does not create an auth when email is missing', async () => {
@@ -82,7 +101,7 @@ describe('AuthController', () => {
       expect(userService.findUserByRefId).toHaveBeenCalledWith('ref@1');
       expect(authService.createAuth).not.toHaveBeenCalled();
       expect(result.user).toBe(user);
-      expect(result.authorisation).toBeNull();
+      expect(result.authorisation).toBeUndefined();
       expect(result.createAuthModel).toMatchObject({
         name: 'Jan',
         surname: 'Kowalski',
@@ -127,7 +146,26 @@ describe('AuthController', () => {
       const result = await controller.getUser('ref@1', 'a@b.com');//ref@1 oznacza identyfikator użytkownika przed "@",czyli część przed znakiem "@".
 
       expect(authService.createAuth).not.toHaveBeenCalled();
-      expect(result.authorisation).toBeNull();
+      expect(result.authorisation).toBeUndefined();
+    });
+
+    it('includes existing auth data in createAuthModel when it exists', async () => {
+      const existingAuth = {
+        _id: 'auth1',
+        userId: new Types.ObjectId(),
+        knownIpHashes: ['hash1'],
+        lastLoginIp: '203.0.113.10',
+        lastLoginDate: new Date('2024-01-01'),
+        userAuthID: 123,
+      };
+      authService.findAuthByUserRefID.mockResolvedValue(existingAuth);
+
+      const result = await controller.getUser('ref@1');
+
+      expect(result.createAuthModel.knownIpHashes).toEqual(['hash1']);
+      expect(result.createAuthModel.lastLoginIp).toBe('203.0.113.10');
+      expect(result.createAuthModel.lastLoginDate).toBe(existingAuth.lastLoginDate.toString());
+      expect(result.createAuthModel.userAuthID).toBe(123);
     });
 
     it('propagates service errors', async () => {
@@ -136,131 +174,201 @@ describe('AuthController', () => {
     });
   });
 
+  describe('getAuthTemplateCongregate', () => {
+    it('returns auth, user and users data for authorized request', async () => {
+      const auth = { _id: 'auth1', knownIpHashes: [] };
+      const users = [{ userName: 'A' }];//[{}] oznacza przykładową listę użytkowników
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
+      userService.findAllUsers.mockResolvedValue(users);
+
+      const result = await controller.getAuthTemplateCongregate('ref@1', {
+        user: { userRefID: 'ref@1' },
+      });
+
+      expect(result.auth).toBe(auth);
+      expect(result.users).toBe(users);
+      expect(result.user).toEqual({ userRefID: 'ref@1' });
+      expect(result.ipInfo).toMatchObject({
+        lastLoginIp: null,
+        lastLoginDate: null,
+        knownIpCount: 0,
+      });
+    });
+
+    it('throws when userRefID does not match', async () => {
+      await expect(
+        controller.getAuthTemplateCongregate('ref@1', { user: { userRefID: 'other@1' } }),
+      ).rejects.toThrow('You are not authorized to view this auth template.');
+    });
+
+    it('returns ipInfo from auth when available', async () => {
+      const auth = {
+        _id: 'auth1',
+        lastLoginIp: '203.0.113.10',
+        lastLoginDate: new Date('2024-01-01'),
+        knownIpHashes: ['hash1', 'hash2'],
+      };
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
+      userService.findAllUsers.mockResolvedValue([]);
+
+      const result = await controller.getAuthTemplateCongregate('ref@1', {
+        user: { userRefID: 'ref@1' },
+      });
+
+      expect(result.ipInfo).toMatchObject({
+        lastLoginIp: '203.0.113.10',
+        lastLoginDate: auth.lastLoginDate,
+        knownIpCount: 2,
+        ipHistory: ['hash1', 'hash2'],
+      });
+    });
+  });
+
   describe('updateAuth', () => {
+    const authId = new Types.ObjectId();
     const dto = { name: 'New' } as any;
 
-    it('returns a message when the id is missing', async () => {
-      await expect(controller.updateAuth('', dto, {})).resolves.toEqual({
-        message: 'Lack of required ID.',
-      });
-      expect(authService.updateAuth).not.toHaveBeenCalled();
+    it('throws when the user is not authorized (userRefID mismatch)', async () => {
+      authService.findAuthByUserRefID.mockResolvedValue(null);
+
+      await expect(
+        controller.updateAuth(authId.toString(), dto, { user: { userRefID: 'ref@1' } }),
+      ).rejects.toThrow('You are not authorized to update this auth.');
     });
 
-    it('returns a failure message when nothing was updated', async () => {
+    it('throws when the ID does not match auth._id', async () => {
+      const auth = { _id: new Types.ObjectId(), userRefID: 'ref@1' };
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
+
+      await expect(
+        controller.updateAuth(new Types.ObjectId().toString(), dto, { user: { userRefID: 'ref@1' } }),
+      ).rejects.toThrow('You are not authorized to update this auth.');
+    });
+
+    it('throws when trying to change userRefID to a different value', async () => {
+      const auth = { _id: authId, userRefID: 'ref@1' };
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
+
+      await expect(
+        controller.updateAuth(authId.toString(), { userRefID: 'other@1' }, {
+          user: { userRefID: 'ref@1' },
+        }),
+      ).rejects.toThrow('Invalid userRefID.');
+    });
+
+    it('updates auth successfully and returns the updated auth', async () => {
+      const auth = { _id: authId, userRefID: 'ref@1' };
+      const updated = { ...auth, name: 'New' };
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
+      authService.updateAuth.mockResolvedValue(updated);
+
+      const result = await controller.updateAuth(authId.toString(), dto, {
+        user: { userRefID: 'ref@1', id: 1 },
+      });
+
+      expect(result.message).toBe('Update successful.');
+      expect(result.updatedAuth).toBe(updated);
+      expect(result.user).toEqual({ userRefID: 'ref@1', id: 1 });
+      expect(authService.updateAuth).toHaveBeenCalledWith(authId.toString(), dto);
+    });
+
+    it('returns failure message when update returns null', async () => {
+      const auth = { _id: authId, userRefID: 'ref@1' };
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
       authService.updateAuth.mockResolvedValue(null);
 
-      await expect(controller.updateAuth('1', dto, { user: {} })).resolves.toEqual({
-        message: 'Update failed.',
+      const result = await controller.updateAuth(authId.toString(), dto, {
+        user: { userRefID: 'ref@1' },
       });
-      expect(authService.updateAuth).toHaveBeenCalledWith('1', dto);
+
+      expect(result.message).toBe('Update failed.');
     });
 
-    it('returns the updated auth together with its user', async () => {
-      const updated = { userID: 'ref@1' };
-      const user = { userName: 'Jan' };
-      authService.updateAuth.mockResolvedValue(updated);
-      userService.findUserByRefId.mockResolvedValue(user);
+    it('propagates service errors after authorization check', async () => {
+      const auth = { _id: authId, userRefID: 'ref@1' };
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
+      authService.updateAuth.mockRejectedValue(new Error('db error'));
 
-      await expect(controller.updateAuth('1', dto, { user: { id: 1 } })).resolves.toEqual({
-        message: 'Update successful.',
-        updatedAuth: updated,
-        user,
-      });
-      expect(userService.findUserByRefId).toHaveBeenCalledWith('ref@1');
-    });
-
-    it('skips the user lookup when the request is not authenticated', async () => {
-      authService.updateAuth.mockResolvedValue({ userID: 'ref@1' });
-
-      const result: any = await controller.updateAuth('1', dto, {});
-
-      expect(userService.findUserByRefId).not.toHaveBeenCalled();
-      expect(result.user).toBeUndefined();
-    });
-
-    it('returns a null user when the updated auth has no userID', async () => {
-      authService.updateAuth.mockResolvedValue({});
-
-      const result: any = await controller.updateAuth('1', dto, { user: {} });
-
-      expect(userService.findUserByRefId).not.toHaveBeenCalled();
-      expect(result.user).toBeNull();
-    });
-
-    it('propagates service errors', async () => {
-      authService.updateAuth.mockRejectedValue(new Error('boom'));
-      await expect(controller.updateAuth('1', dto, { user: {} })).rejects.toThrow('boom');
+      await expect(
+        controller.updateAuth(authId.toString(), dto, { user: { userRefID: 'ref@1' } }),
+      ).rejects.toThrow('db error');
     });
   });
 
   describe('deleteAuth', () => {
+    const authId = new Types.ObjectId();
     const userId = new Types.ObjectId();
     const dto = { userAuthID: 7, userId } as any;
 
-    it('returns a message when neither id nor selection is given', async () => {
+    it('throws when the user is not authorized', async () => {
+      authService.findAuthByUserRefID.mockResolvedValue(null);
+
       await expect(
-        controller.deleteAuth('', {} as any, { user: {} }),
-      ).resolves.toEqual({ message: 'Lack of required ID or selection to delete the user.' });
-      expect(authService.deleteSelection).not.toHaveBeenCalled();
+        controller.deleteAuth(authId.toString(), dto, { user: { userRefID: 'ref@1' } }),
+      ).rejects.toThrow('You are not authorized to delete this auth.');
     });
 
-    it('deletes the selection and returns the user', async () => {
-      const user = { userName: 'Jan' };
-      authService.deleteSelection.mockResolvedValue({ deletionResult: true });
-      userService.findUserByRefId.mockResolvedValue(user);
+    it('throws when the ID does not match auth._id', async () => {
+      const auth = { _id: new Types.ObjectId(), userRefID: 'ref@1', userAuthID: 7, userId };
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
 
-      await expect(controller.deleteAuth('1', dto, { user: {} })).resolves.toEqual({
-        message: 'Deletion successful.',
-        authToDelete: { deletionResult: true },
-        user,
+      await expect(
+        controller.deleteAuth(authId.toString(), dto, { user: { userRefID: 'ref@1' } }),
+      ).rejects.toThrow('You are not authorized to delete this auth.');
+    });
+
+    it('throws when selection data (userAuthID) does not match', async () => {
+      const auth = { _id: authId, userRefID: 'ref@1', userAuthID: 99, userId };
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
+
+      await expect(
+        controller.deleteAuth(authId.toString(), dto, { user: { userRefID: 'ref@1' } }),
+      ).rejects.toThrow('The selection does not match your auth data.');
+    });
+
+    it('throws when selection data (userId) does not match', async () => {
+      const auth = { _id: authId, userRefID: 'ref@1', userAuthID: 7, userId: new Types.ObjectId() };
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
+
+      await expect(
+        controller.deleteAuth(authId.toString(), dto, { user: { userRefID: 'ref@1' } }),
+      ).rejects.toThrow('The selection does not match your auth data.');
+    });
+
+    it('deletes auth successfully', async () => {
+      const auth = { _id: authId, userRefID: 'ref@1', userAuthID: 7, userId };
+      const deleted = { deletionResult: true };
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
+      authService.deleteSelection.mockResolvedValue(deleted);
+
+      const result = await controller.deleteAuth(authId.toString(), dto, {
+        user: { userRefID: 'ref@1' },
       });
+
+      expect(result.message).toBe('Deletion successful.');
+      expect(result.authToDelete).toBe(deleted);
       expect(authService.deleteSelection).toHaveBeenCalledWith({
         userAuthID: 7,
         userId,
       });
-      expect(userService.findUserByRefId).toHaveBeenCalledWith(userId.toString());
     });
 
-    it('works with only a selection and no id', async () => {
-      authService.deleteSelection.mockResolvedValue({ deletionResult: true });
+    it('propagates service errors after authorization check', async () => {
+      const auth = { _id: authId, userRefID: 'ref@1', userAuthID: 7, userId };
+      authService.findAuthByUserRefID.mockResolvedValue(auth);
+      authService.deleteSelection.mockRejectedValue(new Error('db error'));
 
-      const result: any = await controller.deleteAuth('', dto, { user: {} });
-
-      expect(authService.deleteSelection).toHaveBeenCalledTimes(1);
-      expect(result.message).toBe('Deletion successful.');
-    });
-
-    it('skips the user lookup when the request is not authenticated', async () => {
-      authService.deleteSelection.mockResolvedValue({ deletionResult: true });
-
-      const result: any = await controller.deleteAuth('1', dto, {});
-
-      expect(userService.findUserByRefId).not.toHaveBeenCalled();
-      expect(result.user).toBeUndefined();
-    });
-
-    it('returns a null user when the selection has no userId', async () => {
-      authService.deleteSelection.mockResolvedValue({ deletionResult: true });
-
-      const result: any = await controller.deleteAuth('1', { userAuthID: 7 } as any, {
-        user: {},
-      });
-
-      expect(userService.findUserByRefId).not.toHaveBeenCalled();
-      expect(result.user).toBeNull();
-    });
-
-    it('propagates the failure when the deletion fails', async () => {
-      authService.deleteSelection.mockRejectedValue(new Error('Selection deletion failed'));
-
-      await expect(controller.deleteAuth('1', dto, { user: {} })).rejects.toThrow(
-        'Selection deletion failed',
-      );
+      await expect(
+        controller.deleteAuth(authId.toString(), dto, { user: { userRefID: 'ref@1' } }),
+      ).rejects.toThrow('db error');
     });
   });
 
   describe('createAuth', () => {
     const dto = {
+      knownIpHashes: [],
+      lastLoginIp: '',
+      lastLoginDate: '',
       userID: new Types.ObjectId().toString(),
       userAuthID: 1,
       name: 'Test',

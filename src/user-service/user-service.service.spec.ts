@@ -295,5 +295,15 @@ describe('UserServiceService', () => {
 
       await expect(service.findAllUsers('r1', 'a@b.com')).resolves.toEqual([wanted]);
     });
+
+    it('returns all users when no filters are provided', async () => {
+      const users = [makeDbUser('r1', 'a@b.com'), makeDbUser('r2', 'c@d.com')];
+      userModel.find.mockReturnValue(execResolving(users));
+
+      const result = await service.findAllUsers();
+
+      expect(userModel.find).toHaveBeenCalledWith({});
+      expect(result).toEqual(users);
+    });
   });
 });

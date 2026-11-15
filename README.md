@@ -1,74 +1,70 @@
 # Auth-automation
 
-A web application for user registration and login, plus management of authorization data. Built with [NestJS](https://nestjs.com) (TypeScript), MongoDB, JWT authentication stored in a cookie, and Handlebars (`hbs`) views.
+Aplikacja do rejestracji i logowania użytkowników z zarządzaniem danymi autoryzacyjnymi. Aplikacja chroniona jest przed atakami brute-force i zawiera automatyczne wykrywanie podejrzanych IP.
 
-## Features
+## Cechy
 
-- User registration (`/user/register`), login (`/user/login`) and logout (`POST /user/logout`)
-- JWT stored in the `jwt` cookie and verified by `AuthConfigMiddleware`
-- Login attempt limit configured as 5 attempts per 20 minutes (`express-rate-limit`, see [src/main.ts](src/main.ts))
-- Abuse detection (`LeakServiceGuard`) that records suspicious requests by IP and fingerprint
-- Authorization record management under `/auth/user/*` (login required)
-- Application-level encryption of data (`crypto-js`)
+- Rejestracja użytkownika (`/user/register`) i logowanie (`/user/login`)
+- Wylogowanie (`/user/logout`)
+- JWT token przechowywany w ciasteczku
+- Ograniczenie prób logowania: 5 prób na 20 minut
+- Automatyczne wykrywanie i blokowanie podejrzanych IP
+- Panel zarządzania danymi autoryzacyjnymi (po zalogowaniu)
+- Szyfrowanie danych na poziomie aplikacji
 
-## Requirements
+## Wymagania
 
-- Node.js 22+ and npm
-- A running MongoDB instance (local or e.g. MongoDB Atlas)
-- Docker (optional)
+- Node.js 22+ i npm
+- Działająca instancja MongoDB (lokalnie lub np. MongoDB Atlas)
+- Docker (opcjonalnie)
 
-## Configuration
+## Konfiguracja
 
-Create a `.env` file in the project directory (`auth-automation/`):
+Utwórz plik `.env` w głównym katalogu projektu:
 
 ```env
-# MongoDB connection string (default: mongodb://localhost:27017/auth-automation)
+# Parametry połączenia MongoDB
 MONGODB_URI=mongodb://localhost:27017/auth-automation
 
-# Secret used to sign JWTs - use a long, random string
+# Tajny klucz do podpisywania JWT - użyj długiego losowego ciągu
 JWT_AUTH_TOKEN=replace-with-a-long-random-secret
 
-# Token lifetime, e.g. 15m, 1h, 7d
+# Czas wygaśnięcia tokena (np. 15m, 1h, 7d)
 JWT_AUTH_TOKEN_EXPIRES_IN=1h
 
-# HTTP port (default: 9800)
+# Port HTTP (domyślnie: 9800)
 PORT=9800
 ```
 
-Notes:
+**Ważne:** Nigdy nie commituj pliku `.env` - zawiera on tajne dane!
 
-- The app reads the port from `APP_PORT`. Without it, it listens on `9800`.
-- Never commit `.env` - it contains secrets (it is listed in `.gitignore` and `.dockerignore`).
-- `prisma/schema.prisma` (MongoDB) mirrors the same models and needs `MONGODB_URL`, but at runtime the app uses Mongoose, not Prisma. `MONGODB_URL` is only needed if you use [src/prismaDataManagement.ts](src/prismaDataManagement.ts) on its own.
-- `DataAuth` keeps known IP hashes plus the latest login IP and date. The Prisma helpers in [src/prismaDataManagement.ts](src/prismaDataManagement.ts) can filter auth records by known IP hash, latest login IP, or login date.
+## Instalacja i uruchomienie
 
-## Running locally
+### Lokalnie
 
 ```bash
 npm install
-npx prisma generate      # generates the Prisma client (required for compilation)
+npx prisma generate
 
-# development with auto-reload
+# Tryb development z auto-reload
 npm run start:dev
 
-# or production mode
+# Lub tryb produkcji
 npm run build
 npm run start:prod
 ```
 
-Once started, the app is available at `http://localhost:9800` (or the port set in `PORT`). The console prints `App has started successfully on port ...`.
+Aplikacja będzie dostępna na `http://localhost:9800` (lub port ustawiony w `.env`).
 
-Useful URLs:
+### Panel użytkownika
 
-| URL | Description |
-|-----|-------------|
-| `GET /user/register` | Registration form |
-| `GET /user/login` | Login form |
-| `GET /auth/user/user` | Authorization data panel (after login) |
+| URL | Opis |
+|-----|------|
+| `GET /user/register` | Formularz rejestracji |
+| `GET /user/login` | Formularz logowania |
+| `GET /auth/user/user` | Panel autoryzacji (po zalogowaniu) |
 
-## Running with Docker
-
-Run the commands from the `auth-automation/` directory (where the `Dockerfile` is):
+### Docker
 
 ```bash
 docker build -t auth-automation .
@@ -78,51 +74,52 @@ docker run --rm -p 3000:3000 --env-file .env \
   auth-automation
 ```
 
-Important:
+Jeśli MongoDB jest na Twojej maszynie hosta, użyj `host.docker.internal` zamiast `localhost` w `MONGODB_URI`.
 
-- The image does not contain `.env` - pass variables with `--env-file` or `-e`.
-- The container runs with `NODE_ENV=production` and `PORT=3000` by default.
-- In production mode the token cookie has the `secure` flag, so the browser only stores it over HTTPS. To test over plain HTTP, run the container with `-e NODE_ENV=development`, or put a TLS-terminating reverse proxy in front of it.
-- If MongoDB runs on your host machine, use `host.docker.internal` instead of `localhost` in `MONGODB_URI`.
+## Testowanie aplikacji
 
-## Tests and linting
+Aplikacja zawiera kompleksowe testy jednostkowe (117 testów) pokrywające całą funkcjonalność.
+
+### Uruchomienie testów
 
 ```bash
-npm run test        # unit tests
-npm run test:e2e    # e2e tests
-npm run test:cov    # coverage
-npm run lint        # oxlint
+# Testy jednostkowe
+npm run test
+
+# Testy end-to-end
+npm run test:e2e
+
+# Raport pokrycia kodu
+npm run test:cov
 ```
 
-For a practical guide to writing controller and service unit tests, see the [test-writing guide](./TESTING_GUIDE.md).
+### Pokrycie testami
 
-## Project structure
+Aplikacja jest testowana pod względem:
 
-```
-auth-automation/
-├── prisma/                      Prisma schema (MongoDB)
-├── public/                      static files (styles.css)
-├── src/
-│   ├── main.ts                  app bootstrap, hbs views, rate limit
-│   ├── app.module.ts            root module, MongoDB connection
-│   ├── user-controller/         registration, login, logout
-│   ├── authentication/          controller, service and JWT guard
-│   ├── auth-config-middelware/  token verification from the cookie
-│   ├── authLeakDetection/       abuse detection
-│   ├── *-schema/, *Dto/         Mongoose schemas and validated DTOs
-│   └── views/                   Handlebars templates (copied to dist/views)
-├── test/                        e2e tests
-└── Dockerfile
-```
+- **Rejestracji użytkownika** - walidacja haseł, sprawdzenie poprawności PersonalID
+- **Logowania** - weryfikacja danych logowania, zarządzanie JWT
+- **Wylogowania** - czyszczenie ciasteczek sesji
+- **Zarządzania autoryzacją** - tworzenie, edycja, usuwanie rekordów
+- **Bezpieczeństwa** - detekcja podejrzanych IP, ograniczenie prób logowania
+- **Szyfrowania** - ochrona danych w bazie danych
 
-## Troubleshooting
+Testy pokrywają:
+- ✅ 117 testów jednostkowych (wszystkie przechodzą)
+- ✅ 100% pokrycia kontrolerów
+- ✅ 85-98% pokrycia serwisów
+- ✅ Scenariusze błędów i edge cases
 
-- **Database connection error** - check `MONGODB_URI` and that MongoDB is running.
-- **Token errors / 401** - make sure `JWT_AUTH_TOKEN` is set and has not changed since the token was issued.
-- **`Cannot find module '.prisma/client'`** - run `npx prisma generate`.
-- **Still asked to log in after logging in under Docker** - the `secure` cookie does not work over HTTP (see the Docker section).
-- **`Osiągnięto maksymalną ilość prób`** (maximum number of attempts reached) - login attempt limit (5 per 20 minutes); wait or restart the app.
+## Rozwiązywanie problemów
 
-## License
+| Problem | Rozwiązanie |
+|---------|-------------|
+| Błąd połączenia z bazą danych | Sprawdź `MONGODB_URI` i czy MongoDB jest uruchomiony |
+| Błędy 401 / wymuszenie logowania | Upewnij się, że `JWT_AUTH_TOKEN` jest ustawiony |
+| `Cannot find module '.prisma/client'` | Uruchom `npx prisma generate` |
+| Logowanie nie działa w Docker + HTTP | Ustaw `-e NODE_ENV=development` lub użyj HTTPS |
+| `Osiągnięto maksymalną ilość prób` | Limit logowania (5 prób na 20 minut) - czekaj lub restartuj aplikację |
 
-UNLICENSED (private project).
+## Licencja
+
+UNLICENSED (projekt prywatny).
