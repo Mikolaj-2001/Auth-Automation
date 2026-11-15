@@ -116,7 +116,13 @@ jobs:
       JWT_AUTH_TOKEN: ${{ secrets.JWT_AUTH_TOKEN }}
       JWT_AUTH_TOKEN_EXPIRES_IN: 1h
       APP_PORT: 9800
+      MONGODB_URI: mongodb://127.0.0.1:27017/auth-automation
     runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
     outputs:
       unit-tests-outcome: ${{ steps.run-unit-tests.outcome }}
       tests-outcome: ${{ steps.run-tests.outcome }}
