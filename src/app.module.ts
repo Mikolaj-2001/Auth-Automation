@@ -13,7 +13,7 @@ import { LeakServiceGuard } from './authLeakDetection/leak-service.guard';
   imports: [
     UserModule,
     AuthModule,
-    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/auth-automation'),
+    MongooseModule.forRoot(process.env.MONGODB_URL || 'mongodb://localhost:27017/auth-automation'),
     ConfigModule.forRoot({ isGlobal: true }),
   ],
   controllers: [AppController, UserControllerController],

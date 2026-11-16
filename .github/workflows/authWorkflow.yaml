@@ -29,7 +29,7 @@ jobs:
         operating-system: [ubuntu-latest, ubuntu-22.04]
     runs-on: ${{ matrix.operating-system }}
     container:
-      image: node:24
+      image: node:latest
     services:
       mongo:
         image: mongo:latest
@@ -50,7 +50,7 @@ jobs:
 
       - name: Cache node_modules
         id: cache-dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules
           key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
@@ -87,18 +87,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          node-version: "latest"
 
       - name: Cache node_modules
         id: cache-dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules
-          key: ${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
-          restore-keys: | 
-            ${{ runner.os }}-node-24-
+          key: ${{ runner.os }}-node-latest-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-latest-
 
       - name: Install Dependencies
         if: steps.cache-dependencies.outputs.cache-hit != 'true'
@@ -125,9 +125,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          node-version: "latest"
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -172,7 +172,7 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-${{ matrix.node-version }}
+          name: ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-latest
           path: dist
 
       - name: Output JS filenames
@@ -188,7 +188,9 @@ jobs:
         run: echo "${{needs.build.outputs.script-file}}"
 
       - name: Deploy
-        run: echo "${{ needs.test.result }}"
+        run: |
+          echo "${{ needs.test.result }}"
+          echo "${{ needs.deploy.result }}"
   failure-report:
     needs: [test, deploy]
     if: ${{ cancelled() || (needs.test.result == 'failure' || needs.deploy.result == 'failure') }}
