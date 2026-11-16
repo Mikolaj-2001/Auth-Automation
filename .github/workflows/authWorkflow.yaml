@@ -32,7 +32,7 @@ jobs:
       image: node:24
     services:
       mongo:
-        image: mongo:7
+        image: mongo:latest
         ports:
           - 27017:27017
     outputs:
