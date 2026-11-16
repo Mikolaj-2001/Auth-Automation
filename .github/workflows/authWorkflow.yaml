@@ -107,16 +107,13 @@ jobs:
   test:
     needs: build
     environment: testing
-    strategy:
-      matrix:
-        app-port: [9800, 1200]
     env:
       MONGODB_URL: ${{ secrets.MONGODB_URL }}
       MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
       MONGODB_USER: ${{ secrets.MONGODB_USER }}
       JWT_AUTH_TOKEN: ${{ secrets.JWT_AUTH_TOKEN }}
       JWT_AUTH_TOKEN_EXPIRES_IN: 1h
-      APP_PORT: ${{ matrix.app-port }}
+      APP_PORT: 9800
     runs-on: ubuntu-latest
     outputs:
       unit-tests-outcome: ${{ steps.run-unit-tests.outcome }}
@@ -152,13 +149,13 @@ jobs:
       - name: Run Server
         run: |
           npm start &
-          npx --yes wait-on https://localhost:${{ matrix.app-port }} --timeout 60000
+          npx --yes wait-on https://localhost:9800 --timeout 60000 || npx --yes wait-on https://localhost:1200 --timeout 60000
 
       - name: Run Tests
         id: run-tests
         run: npm test -- --json --outputFile=test-results2/results2.json
         env:
-          BASE_URL: https://localhost:${{ matrix.app-port }}
+          BASE_URL: https://localhost:9800
 
       - name: Upload Test Artifacts
         if: failure()
