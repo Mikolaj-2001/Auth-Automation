@@ -39,10 +39,10 @@ jobs:
       script-file: ${{ steps.publishing.outputs.script-file }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -50,7 +50,7 @@ jobs:
 
       - name: Cache node_modules
         id: cache-dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@v6.1.0
         with:
           path: node_modules
           key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
@@ -74,7 +74,7 @@ jobs:
         id: publishing
         run: node -e "const fs = require('node:fs'); const file = fs.readdirSync('dist').find((name) => name.endsWith('.js')); if (file) fs.appendFileSync(process.env.GITHUB_OUTPUT, 'script-file=' + file + require('node:os').EOL)";
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-${{ matrix.node-version }}
           path: dist
@@ -85,15 +85,15 @@ jobs:
     runs-on: [self-hosted, label-Wsx64]
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: "latest"
 
       - name: Cache node_modules
         id: cache-dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@v6.1.0
         with:
           path: node_modules
           key: ${{ runner.os }}-node-latest-${{ hashFiles('package-lock.json') }}
@@ -122,14 +122,12 @@ jobs:
       tests-outcome: ${{ steps.run-tests.outcome }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: "latest"
-          cache: npm
-          cache-dependency-path: package-lock.json
 
       - name: Install Dependencies
         run: npm ci
@@ -154,7 +152,7 @@ jobs:
 
       - name: Upload Test Artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-artifacts
           path: |
@@ -167,10 +165,13 @@ jobs:
       contents: read
     needs: [build, test]
     environment: production
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest, ubuntu-22.04]
+    runs-on: ${{ matrix.operating-system }}
     steps:
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-latest
           path: dist
