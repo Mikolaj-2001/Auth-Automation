@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -50,7 +50,7 @@ jobs:
 
       - name: Cache node_modules
         id: cache-dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
@@ -87,17 +87,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v4
         with:
           node-version: "24"
 
       - name: Cache node_modules
         id: cache-dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-24-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
+          restore-keys: | 
             ${{ runner.os }}-node-24-
 
       - name: Install Dependencies
@@ -125,7 +125,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: npm
@@ -144,13 +144,13 @@ jobs:
       - name: Run Server
         run: |
           npm start &
-          npx --yes wait-on https://localhost:9800 --timeout 60000
+          npx --yes wait-on http://localhost:9800 --timeout 60000
 
       - name: Run Tests
         id: run-tests
         run: npm test -- --json --outputFile=test-results2/results2.json
         env:
-          BASE_URL: https://localhost:9800
+          BASE_URL: http://localhost:9800
 
       - name: Upload Test Artifacts
         if: failure()
@@ -188,12 +188,10 @@ jobs:
         run: echo "${{needs.build.outputs.script-file}}"
 
       - name: Deploy
-        run: |
-          echo "${{ needs.test.outcome }}"
-          echo "${{ needs.deploy.outcome }}"
+        run: echo "${{ needs.test.result }}"
   failure-report:
     needs: [test, deploy]
-    if: ${{ cancelled() || (needs.test.outcome == 'failure' || needs.deploy.outcome == 'failure') }}
+    if: ${{ cancelled() || (needs.test.result == 'failure' || needs.deploy.result == 'failure') }}
     runs-on: ubuntu-latest
     steps:
       - name: Report information
