@@ -101,6 +101,7 @@ jobs:
       - name: Install Dependencies
         if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: npm ci
+
       - name: Push Prisma Schema
         run: npx prisma db push
 
@@ -114,7 +115,7 @@ jobs:
       JWT_AUTH_TOKEN: ${{ secrets.JWT_AUTH_TOKEN }}
       JWT_AUTH_TOKEN_EXPIRES_IN: 1h
       APP_PORT: 9800
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, label-Wsx64]
     outputs:
       unit-tests-outcome: ${{ steps.run-unit-tests.outcome }}
       tests-outcome: ${{ steps.run-tests.outcome }}
@@ -132,12 +133,12 @@ jobs:
         uses: actions/cache@v6.1.0
         with:
           path: node_modules
-          key: ubuntu-latest-node-latest-${{ hashFiles('package-lock.json') }}
+          key: Windows-node-latest-${{ hashFiles('package-lock.json') }}
           restore-keys: |
-            ubuntu-latest-node-26-
-            ubuntu-22.04-node-24-
+            Windows-node-
 
       - name: Install Dependencies
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Initialise Prisma Client
