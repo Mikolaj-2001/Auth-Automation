@@ -132,9 +132,10 @@ jobs:
         uses: actions/cache@v6.1.0
         with:
           path: node_modules
-          key: ubuntu-node-latest-${{ hashFiles('package-lock.json') }}
+          key: ubuntu-latest-node-latest-${{ hashFiles('package-lock.json') }}
           restore-keys: |
-            ubuntu-node-latest-
+            ubuntu-latest-node-26-
+            ubuntu-22.04-node-24-
 
       - name: Install Dependencies
         run: npm ci
@@ -145,6 +146,9 @@ jobs:
       - name: Run Jest unit tests
         id: run-unit-tests
         run: npm test -- --runInBand --outputFile=test-results/results.json
+
+      - name: Show runner public IP
+        run: curl -4 https://api.ipify.org
 
       - name: Run Server
         run: |
