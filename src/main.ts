@@ -39,9 +39,10 @@ async function bootstrap() {
   hbs.registerHelper('uppercase', (str: string) => str.toUpperCase());
   hbs.registerHelper('lowercase', (str: string) => str.toLowerCase());
 
-  const port = process.env.APP_PORT ?? 9800;
+  const port = Number(process.env.APP_PORT ?? 9800);
+  const host = process.env.APP_HOST ?? '0.0.0.0';
   app.use('/user/login', loginLimitation);
-  await app.listen(port);
-  console.log('App has started successfully on port', port);
+  await app.listen(port, host);
+  console.log(`App has started successfully on http://${host}:${port}`);
 }
 bootstrap();

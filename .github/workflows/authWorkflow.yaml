@@ -114,6 +114,7 @@ jobs:
       MONGODB_USER: ${{ secrets.MONGODB_USER }}
       JWT_AUTH_TOKEN: ${{ secrets.JWT_AUTH_TOKEN }}
       JWT_AUTH_TOKEN_EXPIRES_IN: 1h
+      APP_HOST: 127.0.0.1
       APP_PORT: 9800
     runs-on: [self-hosted, label-Wsx64]
     outputs:
