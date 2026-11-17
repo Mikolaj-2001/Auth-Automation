@@ -151,16 +151,39 @@ jobs:
       - name: Show runner public IP
         run: curl -4 https://api.ipify.org
 
-      - name: Run Server
-        run: |
-          npm start &
-          npx --yes wait-on https://localhost:9800 --timeout 60000 || npx --yes wait-on https://localhost:1200 --timeout 60000
-
-      - name: Run Tests
+      - name: Run Server and Tests
         id: run-tests
-        run: npm test -- --json --outputFile=test-results2/results2.json
-        env:
-          BASE_URL: https://localhost:9800
+        run: |
+          $env:BASE_URL = "http://127.0.0.1:$env:APP_PORT"
+          $stdout = Join-Path $env:RUNNER_TEMP "server-stdout.log"
+          $stderr = Join-Path $env:RUNNER_TEMP "server-stderr.log"
+          $server = Start-Process node -ArgumentList "./node_modules/@nestjs/cli/bin/nest.js", "start" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          try {
+            $deadline = (Get-Date).AddSeconds(60)
+            $ready = $false
+            while ((Get-Date) -lt $deadline) {
+              $server.Refresh()
+              if ($server.HasExited) { throw "Server exited before becoming ready." }
+              try {
+                Invoke-WebRequest -Uri "$env:BASE_URL/" -TimeoutSec 2 | Out-Null
+                $ready = $true
+                break
+              } catch {
+                Start-Sleep -Seconds 1
+              }
+            }
+            if (-not $ready) { throw "Timed out waiting for $env:BASE_URL" }
+            npm test -- --json --outputFile=test-results2/results2.json
+            if ($LASTEXITCODE -ne 0) { throw "Tests failed with exit code $LASTEXITCODE." }
+          } catch {
+            Get-Content $stdout, $stderr
+            throw
+          } finally {
+            $server.Refresh()
+            if (-not $server.HasExited) {
+              taskkill /PID $server.Id /T /F
+            }
+          }
 
       - name: Upload Test Artifacts
         if: failure()
