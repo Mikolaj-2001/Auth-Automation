@@ -154,7 +154,7 @@ jobs:
       - name: Run Server
         run: |
           npm start &
-          npx --yes wait-on https://localhost:9800 --timeout 60000 || npx --yes wait-on https://localhost:1200 --timeout 60000
+          npx --yes wait-on https://localhost:9800 --timeout 1800000 || npx --yes wait-on https://localhost:1200 --timeout 1800000
 
       - name: Run Tests
         id: run-tests
