@@ -160,19 +160,17 @@ jobs:
           $server = Start-Process node -ArgumentList "./node_modules/@nestjs/cli/bin/nest.js", "start" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             $deadline = (Get-Date).AddSeconds(60)
-            $ready = $false
-            while ((Get-Date) -lt $deadline) {
+            while ($true) {
               $server.Refresh()
               if ($server.HasExited) { throw "Server exited before becoming ready." }
               try {
                 Invoke-WebRequest -Uri "$env:BASE_URL/" -TimeoutSec 2 | Out-Null
-                $ready = $true
                 break
               } catch {
+                if ((Get-Date) -ge $deadline) { throw "Timed out waiting for $env:BASE_URL" }
                 Start-Sleep -Seconds 1
               }
             }
-            if (-not $ready) { throw "Timed out waiting for $env:BASE_URL" }
             npm test -- --json --outputFile=test-results2/results2.json
             if ($LASTEXITCODE -ne 0) { throw "Tests failed with exit code $LASTEXITCODE." }
           } catch {
