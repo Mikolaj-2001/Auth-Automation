@@ -153,7 +153,9 @@ jobs:
 
       - name: Run Tests
         id: run-tests
-        run: npm test -- --json --outputFile=test-results2/results2.json
+        run: |
+          node -e "require('fs').mkdirSync('test-results2', { recursive: true })"
+          npm test -- --json --outputFile=test-results2/results2.json
 
       - name: Upload Test Artifacts
         if: failure()
