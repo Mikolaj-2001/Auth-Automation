@@ -152,6 +152,7 @@ jobs:
           taskkill /F /IM node.exe || true
           npm start &
           npx --yes wait-on https://localhost:9800 --timeout 300000 || npx --yes wait-on https://localhost:1200 --timeout 300000
+          curl.exe -vk --max-time 5 https://localhost:9800/ || curl.exe -vk --max-time 5 https://localhost:1200/
 
       - name: Run Tests
         id: run-tests
