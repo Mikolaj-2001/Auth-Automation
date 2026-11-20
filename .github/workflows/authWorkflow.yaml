@@ -106,7 +106,7 @@ jobs:
         run: npx prisma db push
 
   test:
-    needs: build
+    needs: [push-schema, build]
     environment: testing
     env:
       MONGODB_URL: ${{ secrets.MONGODB_URL }}
@@ -154,7 +154,7 @@ jobs:
       - name: Run Server
         run: |
           npm start &
-          npx --yes wait-on https://localhost:9800 --timeout 1800000 || npx --yes wait-on https://localhost:1200 --timeout 1800000
+          npx --yes wait-on https://localhost:9800 --timeout 900000 || npx --yes wait-on https://localhost:1200 --timeout 900000
 
       - name: Run Tests
         id: run-tests
