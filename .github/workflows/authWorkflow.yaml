@@ -151,16 +151,54 @@ jobs:
       - name: Show runner public IP
         run: curl -4 https://api.ipify.org
 
-      - name: Run Server
-        run: |
-          npm start &
-          npx --yes wait-on https://localhost:9800 --timeout 900000 || npx --yes wait-on https://localhost:1200 --timeout 900000
-
       - name: Run Tests
         id: run-tests
-        run: npm test -- --json --outputFile=test-results2/results2.json
-        env:
-          BASE_URL: https://localhost:9800
+        run: |
+          npm run build
+          if ($LASTEXITCODE -ne 0) { throw "Build failed" }
+
+          $port = $null
+          foreach ($candidate in @(9800, 1200)) {
+            $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $candidate)
+            try {
+              $listener.Start()
+              $port = $candidate
+            } catch [System.Net.Sockets.SocketException] {
+              continue
+            } finally {
+              $listener.Stop()
+            }
+            break
+          }
+          if (-not $port) { throw "Neither port 9800 nor 1200 is available" }
+
+          $env:APP_PORT = "$port"
+          $env:BASE_URL = "http://127.0.0.1:$port"
+          $stdout = Join-Path $env:RUNNER_TEMP "auth-server-out.log"
+          $stderr = Join-Path $env:RUNNER_TEMP "auth-server-err.log"
+          $server = Start-Process node -ArgumentList "dist/main.js" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          try {
+            $ready = $false
+            $deadline = (Get-Date).AddSeconds(120)
+            while ((Get-Date) -lt $deadline) {
+              $server.Refresh()
+              if ($server.HasExited) { throw "Server exited before becoming ready" }
+              try {
+                $response = Invoke-WebRequest -Uri "$env:BASE_URL/" -NoProxy -TimeoutSec 2
+                if ($response.StatusCode -eq 200) { $ready = $true; break }
+              } catch {}
+              Start-Sleep -Seconds 1
+            }
+            if (-not $ready) { throw "Server did not become ready at $env:BASE_URL" }
+
+            node -e "require('fs').mkdirSync('test-results2', { recursive: true })"
+            if ($LASTEXITCODE -ne 0) { throw "Could not create test results directory" }
+            npm test -- --json --outputFile=test-results2/results2.json
+            if ($LASTEXITCODE -ne 0) { throw "Tests failed" }
+          } finally {
+            if (-not $server.HasExited) { Stop-Process -Id $server.Id -ErrorAction SilentlyContinue }
+            Get-Content $stdout, $stderr -ErrorAction SilentlyContinue
+          }
 
       - name: Upload Test Artifacts
         if: failure()
