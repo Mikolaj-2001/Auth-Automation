@@ -152,7 +152,6 @@ jobs:
           taskkill /F /IM node.exe || true
           npm start &
           npx --yes wait-on http://localhost:9800 --timeout 300000 || npx --yes wait-on http://localhost:1200 --timeout 300000
-          curl.exe -v --max-time 5 http://localhost:9800/ || curl.exe -vk --max-time 5 http://localhost:1200/
 
       - name: Run Tests
         id: run-tests
@@ -185,7 +184,9 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v8
         with:
-          name: ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-latest
+          name: |
+            ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-24
+            ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-26
           path: dist
 
       - name: Output JS filenames
