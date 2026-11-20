@@ -151,16 +151,9 @@ jobs:
       - name: Show runner public IP
         run: curl -4 https://api.ipify.org
 
-      - name: Run Server
-        run: |
-          npm start &
-          npx --yes wait-on https://localhost:9800 --timeout 900000 || npx --yes wait-on https://localhost:1200 --timeout 900000
-
       - name: Run Tests
         id: run-tests
         run: npm test -- --json --outputFile=test-results2/results2.json
-        env:
-          BASE_URL: https://localhost:9800
 
       - name: Upload Test Artifacts
         if: failure()
