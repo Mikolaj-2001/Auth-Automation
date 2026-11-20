@@ -149,7 +149,7 @@ jobs:
 
       - name: Run Server
         run: |
-          pkill -f "node" || true
+          taskkill /F /IM node.exe || true
           npm start &
           npx --yes wait-on https://localhost:9800 --timeout 300000 || npx --yes wait-on https://localhost:1200 --timeout 300000
 
