@@ -19,16 +19,16 @@
                     <label for="userName" class="form-label-modern">
                         <i class="bi bi-person-fill"></i> Username
                     </label>
-                    <input type="text" name="userName" id="userName" class="form-control form-control-modern" 
-                        required placeholder="Choose your username">
+                    <input type="text" name="userName" id="userName" class="form-control form-control-modern" required
+                        placeholder="Choose your username">
                 </div>
 
                 <div class="form-group-modern">
                     <label for="surName" class="form-label-modern">
                         <i class="bi bi-person-badge-fill"></i> Surname
                     </label>
-                    <input type="text" name="SurName" id="surName" class="form-control form-control-modern" 
-                        required placeholder="Enter your surname">
+                    <input type="text" name="SurName" id="surName" class="form-control form-control-modern" required
+                        placeholder="Enter your surname">
                 </div>
             </div>
 
@@ -36,15 +36,15 @@
                 <label for="email" class="form-label-modern">
                     <i class="bi bi-envelope-fill"></i> Email Address
                 </label>
-                <input type="email" name="email" id="email" class="form-control form-control-modern" 
-                    required placeholder="Enter your email address">
+                <input type="email" name="email" id="email" class="form-control form-control-modern" required
+                    placeholder="Enter your email address">
             </div>
 
             <div class="form-group-modern">
                 <label for="personalIdInfo" class="form-label-modern">
                     <i class="bi bi-card-text"></i> Personal ID
                 </label>
-                <input type="number" name="personalIdInfo" id="personalIdInfo" class="form-control form-control-modern" 
+                <input type="number" name="personalIdInfo" id="personalIdInfo" class="form-control form-control-modern"
                     required placeholder="Enter your personal ID number">
                 <small class="form-text-info">
                     <i class="bi bi-info-circle"></i> Personal ID must contain only digits.
@@ -55,11 +55,16 @@
                 <label for="password" class="form-label-modern">
                     <i class="bi bi-key-fill"></i> Password
                 </label>
-                <input type="password" name="password" id="password" class="form-control form-control-modern" 
-                    required placeholder="Create a strong password">
+                <input type="password" name="password" id="password" class="form-control form-control-modern" required
+                    placeholder="Create a strong password">
+                <label for="confirmPassword" class="form-label-modern">
+                    <i class="bi bi-key-fill"></i> Confirm Password
+                </label>
+                <input type="password" name="confirmPassword" id="confirmPassword"
+                    class="form-control form-control-modern" required placeholder="Confirm your password">
                 {{#if error}}
                 <small class="form-text-error">
-                    <i class="bi bi-info-circle"></i> Password must contain at least 8 characters, 
+                    <i class="bi bi-info-circle"></i> Password must contain at least 8 characters,
                     including uppercase, lowercase, number, and special character.
                 </small>
                 {{/if}}
@@ -67,7 +72,8 @@
 
             <div class="form-actions-modern">
                 {{#if user.personalID}}
-                <button type="submit" class="btn btn-modern btn-info-modern" id="verifyButton" onclick="fetchLastPersonalID()">
+                <button type="submit" class="btn btn-modern btn-info-modern" id="verifyButton"
+                    onclick="fetchLastPersonalID()">
                     <i class="bi bi-shield-check"></i> Verify Personal ID
                 </button>
                 <button type="submit" class="btn btn-modern btn-primary-modern" id="registerButton">
@@ -82,13 +88,15 @@
         </form>
 
         <div class="modern-form-footer">
-            <p class="text-center mb-0">Already have an account? <a href="/user/login" class="modern-link-inline">Log in here</a></p>
+            <p class="text-center mb-0">Already have an account? <a href="/user/login" class="modern-link-inline">Log in
+                    here</a></p>
         </div>
     </div>
 </div>
 
 <footer class="modern-footer">
-    <p><i class="bi bi-shield-check"></i> &copy; 2026 Auth Automation. All rights reserved to the author: Mikołaj Gafiuk</p>
+    <p><i class="bi bi-shield-check"></i> &copy; 2026 Auth Automation. All rights reserved to the author: Mikołaj Gafiuk
+    </p>
 </footer>
 
 <script src="../../../public/personalIdFetch.js"></script>

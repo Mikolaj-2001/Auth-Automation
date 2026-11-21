@@ -50,7 +50,7 @@ export class UserControllerController {
         const { confirmPassword, password, userName, Surname, email, PersonalID } = body;
         // The password is never sent back to the view
         const formUser = { userName, Surname, email, PersonalID };
-        try {
+        try {//confirmaPassword to potwierdzenie hasła użytkownika w sensie weryfikacji, że użytkownik wpisał je poprawnie
             if (password !== confirmPassword) {
                 return res.status(400).render('PageView/userRegisteringForm', {
                     user: formUser,

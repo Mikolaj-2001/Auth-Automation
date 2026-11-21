@@ -176,22 +176,29 @@ jobs:
       contents: read
     needs: [build, test]
     environment: production
-    strategy:
-      matrix:
-        node-version: ["25", "26"]
-        operating-system: [ubuntu-latest, ubuntu-22.04]
-    runs-on: ${{ matrix.operating-system }}
+    runs-on: ubuntu-latest
     steps:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v8
         with:
-          name: |
-            ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-25
-            ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-26
+          name: ${{ env.ARTIFACT_NAME }}-ubuntu-latest-latest
           path: dist
+          merge-multiple: true
+
+      - name: Download first-Test Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: test-artifacts
+          path: test-results
+
+      - name: Download second-Test Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: test-artifacts
+          path: test-results2
 
       - name: Output JS filenames
-        run: ls dist
+        run: ls -la dist
 
       - name: Output unit tests result
         run: echo "Unit tests (run-unit-tests) ${{ needs.test.outputs.unit-tests-outcome }}"
