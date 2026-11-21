@@ -34,6 +34,7 @@ export class UserNewLogin {
 
   @IsNotEmpty()
   @IsString()
+  @IsNumber()
   @IsStrongPassword({
     minLength: 8,
     minSymbols: 2,
