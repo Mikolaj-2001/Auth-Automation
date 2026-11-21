@@ -25,7 +25,7 @@ jobs:
     environment: production
     strategy:
       matrix:
-        node-version: ["24", "26"]
+        node-version: ["25", "26"]
         operating-system: [ubuntu-latest, ubuntu-22.04]
     runs-on: ${{ matrix.operating-system }}
     container:
@@ -178,6 +178,7 @@ jobs:
     environment: production
     strategy:
       matrix:
+        node-version: ["25", "26"]
         operating-system: [ubuntu-latest, ubuntu-22.04]
     runs-on: ${{ matrix.operating-system }}
     steps:
@@ -185,7 +186,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: |
-            ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-24
+            ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-25
             ${{ env.ARTIFACT_NAME }}-${{ matrix.operating-system }}-26
           path: dist
 
