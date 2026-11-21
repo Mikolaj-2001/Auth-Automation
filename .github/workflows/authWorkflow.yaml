@@ -221,7 +221,7 @@ jobs:
           echo "$GITHUB_STEP_SUMMARY"
 
       - name: Assign failure label
-        if: contains(github.event.issue.labels.*.name, 'failure', 'error' , 'bug')
+        if: contains(github.event.issue.labels.*.name, 'failure')
         run: |
           curl -X POST \
             -H "Accept: application/vnd.github.v3+json" \
