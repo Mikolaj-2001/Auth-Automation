@@ -25,11 +25,6 @@ export class UserNewLogin {
 
   @IsNotEmpty()
   @IsNumber()
-  @IsStrongPassword({
-    minLength: 11,
-    minSymbols: 11,
-    minUppercase: 11,
-  })
   PersonalID!: number;
 
   @IsNotEmpty()
@@ -39,8 +34,11 @@ export class UserNewLogin {
     minSymbols: 2,
     minLowercase: 2,
     minUppercase: 1,
+    minNumbers: 1,
   })
   password!: string;
+
+  confirmPassword?: string;
 }
 
 const UserNewLoginDto = SchemaFactory.createForClass(UserNewLogin);

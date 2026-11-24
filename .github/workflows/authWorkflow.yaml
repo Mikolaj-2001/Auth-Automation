@@ -189,13 +189,9 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: test-artifacts
-          path: test-results
-
-      - name: Download secondary test artifacts 
-        uses: actions/download-artifact@v8
-        with:
-          name: test-artifacts2
-          path: test-results2
+          path: |
+            test-results
+            test-results2
 
       - name: Output JS filenames
         run: ls -la dist

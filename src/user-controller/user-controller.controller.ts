@@ -58,10 +58,10 @@ export class UserControllerController {
                 });
             }
             const personalID = Number(PersonalID);
-            if (!Number.isInteger(personalID)) {
+            if (isNaN(personalID) || !Number.isInteger(personalID)) {
                 return res.status(400).render('PageView/userRegisteringForm', {
                     user: formUser,
-                    error: 'Personal ID must be a number.',
+                    error: 'Personal ID must be a valid number.',
                 });
             }
 
