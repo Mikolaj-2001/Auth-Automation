@@ -12,7 +12,7 @@ on:
         description: Name of the artifact to upload
         required: true
         default: build-artifacts-test-artifacts
-        type: string
+        type: string 
 
 env:
   MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
@@ -172,7 +172,7 @@ jobs:
 
   deploy:
     permissions:
-      id-token: write
+      id-token: write 
       contents: read
     needs: [build, test]
     environment: production
@@ -181,21 +181,15 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v8
         with:
-          name: ${{ env.ARTIFACT_NAME }}-ubuntu-latest-latest
+          pattern: ${{ env.ARTIFACT_NAME }}-ubuntu-latest-*
           path: dist
           merge-multiple: true
 
-      - name: Download first-Test Artifacts
+      - name: Download Test Artifacts
         uses: actions/download-artifact@v8
         with:
           name: test-artifacts
           path: test-results
-
-      - name: Download second-Test Artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: test-artifacts
-          path: test-results2
 
       - name: Output JS filenames
         run: ls -la dist
