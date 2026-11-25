@@ -41,5 +41,5 @@ model DataAuth {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("dataauths")
+  @@map("data-auths")
 }

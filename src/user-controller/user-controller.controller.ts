@@ -22,7 +22,7 @@ import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { LeakServiceGuard } from '../authLeakDetection/leak-service.guard';
 
-interface AuthRequest extends Request {
+interface AuthRequest extends Request {//tutaj definiujemy rozszerzony typ żądania, który może zawierać dodatkowe informacje o użytkowniku
     user?: any;
 }
 
@@ -51,7 +51,8 @@ export class UserControllerController {
         // The password is never sent back to the view
         const formUser = { userName, Surname, email, PersonalID };
         try {//confirmaPassword to potwierdzenie hasła użytkownika w sensie weryfikacji, że użytkownik wpisał je poprawnie
-            console.log('Password:', typeof password, 'Password:', password, 'Confirm Password:', typeof confirmPassword, 'ConfirmPassword:', confirmPassword);
+            console.log(req.body)
+            console.log(Object.keys(body))
             if (password !== confirmPassword) {
                 return res.status(400).render('PageView/userRegisteringForm', {
                     user: formUser,
@@ -76,9 +77,8 @@ export class UserControllerController {
             };
 
             const newUser = await this.userService.createUser(
-                { userName, Surname, email, password },
+                { userName, Surname, email, PersonalID: personalID, password },
                 authDTO,
-                personalID,
             );
             if (!newUser) {
                 throw new UnauthorizedException('Registration failed');

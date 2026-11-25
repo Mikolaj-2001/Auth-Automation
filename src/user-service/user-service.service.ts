@@ -13,7 +13,6 @@ export class UserServiceService {
         @InjectModel(User.name) private readonly userSchema: Model<User>,
         @InjectModel(DataAuth.name) private readonly authSchema: Model<DataAuth>,
         private readonly personalIDService: PersonalIDService,
-        private userNewLogin: UserNewLoginDTO
     ) { }
 
     private newUser: any[] = [];
@@ -29,16 +28,15 @@ export class UserServiceService {
         do {
             newAuthID = Math.floor(Math.random() * 8_000_000_000_000_000) + 1_000_000_000_000_000;// Losowy 16-cyfrowy identyfikator uwierzytelniania użytkownika
         } while (await this.authSchema.exists({ userAuthID: newAuthID }));
-
+        
         return newAuthID;
     }
 
-    async createUser(userDTO: { userName: string, Surname: string, email: string, password: string },
+    async createUser(userDTO: { userName: string, Surname: string, email: string, PersonalID: number, password: string },
         authDTO: { userAuthID: number, Name: string, email: string, userRefID: string },
-        PersonalID: number,
     ) {
         const personalIDInference = this.personalIDInfo();
-        if (!personalIDInference || personalIDInference !== PersonalID) {
+        if (!personalIDInference || personalIDInference !== userDTO.PersonalID) {
             throw new UnauthorizedException('Personal ID was not provided or does not match !');
         }
         const userNumber = await this.userSchema.createIndexes();
@@ -46,7 +44,7 @@ export class UserServiceService {
         authDTO.userAuthID = userAuthID;
         const createAuthModel = new this.authSchema(authDTO);
         const savedAuthModel = await createAuthModel.save();
-        const createUserModel = { ...userDTO, PersonalID: Number(personalIDInference), userRefID: `${savedAuthModel._id}@${userNumber}` };
+        const createUserModel = { ...userDTO, PersonalID: Number(userDTO.PersonalID), userRefID: `${savedAuthModel._id}@${userNumber}` };
         const createUserModelInstance = new this.userSchema(createUserModel);
         this.newUser.push(createUserModelInstance);
         return await createUserModelInstance.save();
