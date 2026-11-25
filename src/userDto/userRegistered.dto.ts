@@ -5,11 +5,22 @@ import {
   IsStrongPassword,
   IsNotEmpty,
   IsNumber,
+  MaxLength,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
 } from 'class-validator';
 import { Injectable } from '@nestjs/common';
-import { isSet } from 'node:util/types';
 
-export class UserNewLogin {
+@ValidatorConstraint({ name: 'MatchPassword', async: false })
+class MatchPasswordConstraint implements ValidatorConstraintInterface {
+  validate(value: unknown, args: ValidationArguments) {
+    return value === (args.object as { password?: unknown }).password;
+  }//tutaj odbywa się walidacja, czy confirmPassword zgadza się z password,które użytkownik wprowadził
+}//ValidatorConstraint służy do sprawdzania, czy confirmPassword zgadza się z password, które użytkownik wprowadził
+
+export class UserNewLoginDTO {
   @IsNotEmpty()
   @IsString()
   userName!: string;
@@ -29,6 +40,7 @@ export class UserNewLogin {
 
   @IsNotEmpty()
   @IsString()
+  @MaxLength(17)
   @IsStrongPassword({
     minLength: 8,
     minSymbols: 2,
@@ -38,10 +50,13 @@ export class UserNewLogin {
   })
   password!: string;
 
-  confirmPassword?: string;
+  @IsNotEmpty()
+  @IsString()
+  @Validate(MatchPasswordConstraint)
+  confirmPassword!: string;
 }
 
-const UserNewLoginDto = SchemaFactory.createForClass(UserNewLogin);
+const UserNewLoginDto = SchemaFactory.createForClass(UserNewLoginDTO);
 const userPersonalID: string[] = [];
 
 UserNewLoginDto.pre('save', function () {

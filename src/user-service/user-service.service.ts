@@ -5,6 +5,7 @@ import { User } from '../user-schema/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { DataAuth } from '../authData-schema/dataAuth.schema';
 import { PersonalIDService } from '../userDto/userRegistered.dto';
+import { UserNewLoginDTO } from '../userDto/userRegistered.dto';
 
 @Injectable()
 export class UserServiceService {
@@ -12,6 +13,7 @@ export class UserServiceService {
         @InjectModel(User.name) private readonly userSchema: Model<User>,
         @InjectModel(DataAuth.name) private readonly authSchema: Model<DataAuth>,
         private readonly personalIDService: PersonalIDService,
+        private userNewLogin: UserNewLoginDTO
     ) { }
 
     private newUser: any[] = [];
@@ -33,10 +35,10 @@ export class UserServiceService {
 
     async createUser(userDTO: { userName: string, Surname: string, email: string, password: string },
         authDTO: { userAuthID: number, Name: string, email: string, userRefID: string },
-        personalID: number,
+        PersonalID: number,
     ) {
         const personalIDInference = this.personalIDInfo();
-        if (!personalIDInference || personalIDInference !== personalID) {
+        if (!personalIDInference || personalIDInference !== PersonalID) {
             throw new UnauthorizedException('Personal ID was not provided or does not match !');
         }
         const userNumber = await this.userSchema.createIndexes();
@@ -44,7 +46,7 @@ export class UserServiceService {
         authDTO.userAuthID = userAuthID;
         const createAuthModel = new this.authSchema(authDTO);
         const savedAuthModel = await createAuthModel.save();
-        const createUserModel = { ...userDTO, personalID, userRefID: `${savedAuthModel._id}@${userNumber}` };
+        const createUserModel = { ...userDTO, PersonalID: Number(personalIDInference), userRefID: `${savedAuthModel._id}@${userNumber}` };
         const createUserModelInstance = new this.userSchema(createUserModel);
         this.newUser.push(createUserModelInstance);
         return await createUserModelInstance.save();
@@ -83,7 +85,7 @@ export class UserServiceService {
     async findUserByRefId(userRefID: string): Promise<User | null> {
         return this.userSchema.findOne({ userRefID }).exec();
     }
-    
+
     async findAllUsers(userRefID?: string, email?: string): Promise<User[]> {
         let allUsers = await this.userSchema.find({ userRefID, email }).exec();
         if (!userRefID) {

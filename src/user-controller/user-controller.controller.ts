@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { UserServiceService } from '../user-service/user-service.service';
 import { UserLoggingIn } from '../userDto/userLogIn.dto';
-import { UserNewLogin, PersonalIDService } from '../userDto/userRegistered.dto';
+import { UserNewLoginDTO, PersonalIDService } from '../userDto/userRegistered.dto';
 import { AuthGuard } from '../authentication/auth-guard/auth-guard';
 import { AuthServiceService } from '../authentication/auth-service/auth-service.service';
 import { AuthConfigMiddleware } from '../auth-config-middelware/auth-config';
@@ -26,7 +26,7 @@ interface AuthRequest extends Request {
     user?: any;
 }
 
-type RegistrationBody = UserNewLogin & { confirmPassword?: string };
+type RegistrationBody = UserNewLoginDTO & { confirmPassword?: string };//to typ ciała żądania rejestracji użytkownika, który zawiera wszystkie pola UserNewLogin oraz opcjonalne confirmPassword
 
 @Controller('user')
 export class UserControllerController {
@@ -51,6 +51,7 @@ export class UserControllerController {
         // The password is never sent back to the view
         const formUser = { userName, Surname, email, PersonalID };
         try {//confirmaPassword to potwierdzenie hasła użytkownika w sensie weryfikacji, że użytkownik wpisał je poprawnie
+            console.log('Password:', typeof password, 'Password:', password, 'Confirm Password:', typeof confirmPassword, 'ConfirmPassword:', confirmPassword);
             if (password !== confirmPassword) {
                 return res.status(400).render('PageView/userRegisteringForm', {
                     user: formUser,
