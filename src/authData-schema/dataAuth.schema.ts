@@ -13,13 +13,13 @@ import {
 
 @Schema({ timestamps: true })
 export class DataAuth extends Document {
-  @Prop({ required: true, unique: true, type: [String], default: [] })
+  @Prop({ optional: true, unique: true, type: [String], default: [] })
   knownIpHashes!: string[];
 
-  @Prop({ required: true, unique: true })
+  @Prop({ optional: true, unique: true })
   lastLoginIp?: string;
 
-  @Prop({ required: true })
+  @Prop({ optional: true })
   lastLoginDate?: Date;
 
   @Prop({ required: true, type: Types.ObjectId, unique: true })

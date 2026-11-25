@@ -26,11 +26,15 @@ export class AuthServiceService {
   // Mapuje AuthCreateDto na pola schematu DataAuth (encryptionKey generuje hook pre-save)
   async createAuth(dto: AuthCreateDto): Promise<DataAuth> {
     const authDocument = new this.dataAuthModel({
-      userId: new Types.ObjectId(dto.userID),
+      knownIpHashes: dto.knownIpHashes,
+      lastLoginIp: dto.lastLoginIp,
+      lastLoginDate: dto.lastLoginDate,
+      userID: new Types.ObjectId(dto.userID),
       userAuthID: dto.userAuthID,
-      name: dto.name,
+      Name: dto.Name,
       email: dto.email,
       userRefID: dto.userRefID,
+      encryptionKey: dto.encryptionKey,
     });
     return authDocument.save();
   }
@@ -92,24 +96,39 @@ export class AuthServiceService {
     return user;
   }
 
+  async getIPAddressesTK(req: any): Promise<string[]> {
+    const realIp = req.ip || '127.0.0.1';
+    const claimedIp = [
+      ...String(req.headers['x-forwarded-for'] ?? '').split(','),
+      String(req.headers['cf-connecting-ip'] ?? ''),
+    ];
+    return claimedIp
+      .map(ip => ip.trim().slice(0, 45))
+      .filter(ip => ip && ip !== realIp);
+  }
+
   //Modifikowanie struktury przyznawania tokenu JWT dla użytkownika
-  async generateJwtToken(identifier: string, res: Response, ipIdentifier: string): Promise<void> {
+  async generateJwtToken(identifier: string, res: Response, req: any): Promise<void> {
+    const ClaimedIP = await this.getIPAddressesTK(req);
+    const ipIdentifier = ClaimedIP[0];
+
     const user = await this.findUserByDecryptedEmail(identifier);
     if (!user) {
       throw new UnauthorizedException('The specified user does not exist');
     }
+
     const payload: Record<string, any> = {/* tutaj record służy do dynamicznego tworzenia obiektu z właściwościami */
       id: user._id,
       userName: user.userName,
       surname: user.Surname,
       userRefID: user.userRefID,
-      ipIdentifier: ipIdentifier,
+      ipIdentifier,
     };
 
     const token = this.jwtService.sign(payload, {
       secret: this.configService.get('JWT_AUTH_TOKEN'),
       algorithm: 'HS256', // Ten sam algorytm, który wymusza verifyToken
-      issuer: 'auth-automation', // Wystawca tokenu, sprawdzany w verifyToken
+      issuer: 'auth-automation',  // Wystawca tokenu, sprawdzany w verifyToken
       audience: 'auth-automation-client', // Odbiorca tokenu, sprawdzany w verifyToken
       expiresIn: (this.configService.get('JWT_AUTH_TOKEN_EXPIRES_IN') ||
         '1h') as any,
@@ -138,14 +157,29 @@ export class AuthServiceService {
     (_, milliseconds) => `.${milliseconds}000000Z`,
   );
 
-  async registerNewIp(authId: Types.ObjectId, clientIp: string): Promise<{ newIp: boolean, ipIdentifier: string }> {
-    const ipHash = this.hashIp(clientIp);
-    const auth = await this.dataAuthModel.findById(authId);
+  async getIPAddresses(req: any): Promise<string[]> {
+    const realIp = req.ip || '127.0.0.1';
+    const claimedIp = [
+      ...String(req.headers['x-forwarded-for'] ?? '').split(','),
+      String(req.headers['cf-connecting-ip'] ?? ''),
+    ];
+    return claimedIp
+      .map(ip => ip.trim().slice(0, 45))
+      .filter(ip => ip && ip !== realIp);
+  }
+
+  async registerNewIp(userID: Types.ObjectId, dto: AuthCreateDto, req: any): Promise<{ newIp: boolean, ipIdentifier: string }> {
+    await this.createAuth(dto);
+    const auth = await this.dataAuthModel.findOne({ userID });
 
     if (!auth) {
       throw new UnauthorizedException('Authentication failed');
     }
 
+    const claimedIp = await this.getIPAddresses(req);
+    const clientIP = claimedIp[0];
+
+    const ipHash = this.hashIp(clientIP);
     const ipIdentifier = `${ipHash}|${this.accurateTimeStamp}`;
 
     const knownIpHashes = auth.knownIpHashes ?? [];
@@ -153,10 +187,10 @@ export class AuthServiceService {
       !knownIpHashes.some(hash => hash.split('|')[0] === ipHash);
 
     const result = await this.dataAuthModel.updateOne(
-      { _id: authId },
+      { userID },
       {
         $addToSet: { knownIpHashes: ipIdentifier },
-        $set: { lastLoginIp: clientIp, lastLoginDate: new Date() },
+        $set: { lastLoginIp: clientIP, lastLoginDate: new Date() },
       }
     );
     if (result.matchedCount !== 1) {
@@ -197,7 +231,7 @@ export class AuthServiceService {
   async deleteSelection(deleteDTO: deleteSelectionDTO): Promise<number | Types.ObjectId | undefined> {
     const deletionFilter = {
       userAuthID: deleteDTO.userAuthID,
-      userId: deleteDTO.userId,
+      userID: deleteDTO.userId,
     };
     const deletionResult = await this.dataAuthModel.deleteOne(deletionFilter);
     if (deletionResult.deletedCount === 0) {

@@ -323,8 +323,8 @@ main.modern-main-container {
     filter: opacity(0.5);
 }
 
-.form-text-error {
-    color: var(--danger-color);
+.form-text-helper {
+    color: var(--info-color);
     font-size: 0.85rem;
     display: flex;
     align-items: center;

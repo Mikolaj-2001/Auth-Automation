@@ -15,6 +15,7 @@ import {
 import { UserServiceService } from '../user-service/user-service.service';
 import { UserLoggingIn } from '../userDto/userLogIn.dto';
 import { UserNewLoginDTO, PersonalIDService } from '../userDto/userRegistered.dto';
+import { AuthCreateDto } from '../authDto/authCreate.dto';
 import { AuthGuard } from '../authentication/auth-guard/auth-guard';
 import { AuthServiceService } from '../authentication/auth-service/auth-service.service';
 import { AuthConfigMiddleware } from '../auth-config-middelware/auth-config';
@@ -52,7 +53,6 @@ export class UserControllerController {
         const formUser = { userName, Surname, email, PersonalID };
         try {//confirmaPassword to potwierdzenie hasła użytkownika w sensie weryfikacji, że użytkownik wpisał je poprawnie
             console.log(req.body)
-            console.log(Object.keys(body))
             if (password !== confirmPassword) {
                 return res.status(400).render('PageView/userRegisteringForm', {
                     user: formUser,
@@ -71,6 +71,7 @@ export class UserControllerController {
             const authDTO = {
                 userAuthID: 0,//tu powinien być ID autoryzacji użytkownika, które zostanie przypisane po rejestracji w systemie auth
                 Name: userName,
+                Surname: Surname,
                 email,
                 userRefID: new Types.ObjectId().toString(),
                 userId: new Types.ObjectId(),
@@ -91,6 +92,15 @@ export class UserControllerController {
                 error: this.errorMessage(error, 'Registration failed.'),
             });
         }
+    }
+
+    @Get('auth-id')
+    async getAuthID(@Res() res: Response, userDto: UserNewLoginDTO, authDTO: AuthCreateDto) {
+        const savedUser = await this.userService.createUser(userDto, authDTO);
+        return res.render('PageView/userRegisteringForm', {
+            savedUser,
+            authID: savedUser.userAuthID
+        })
     }
 
     @Get('last-personal-id')
@@ -150,10 +160,8 @@ export class UserControllerController {
                     error: 'Invalid email, auth ID or password.',
                 });
             }
-            const clientIp = req.ip ?? req.socket.remoteAddress ?? 'unknown';
 
-            const { ipIdentifier } = await this.authService.registerNewIp(authData._id, clientIp);
-            await this.authService.generateJwtToken(userLoggingIn.email, res, ipIdentifier);
+            await this.authService.generateJwtToken(userLoggingIn.email, res, req);
             return res.render('PageView/userAuthTemplate', {
                 user: user.toObject(),//pomaga to w renderowaniu danych użytkownika w szablonie
                 auth: authData.toObject(),

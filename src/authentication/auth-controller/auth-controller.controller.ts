@@ -45,10 +45,11 @@ export class AuthController {
             lastLoginDate: existingAuth?.lastLoginDate?.toString() ?? '',
             userID: existingAuth?.userId?.toString() ?? new Types.ObjectId().toString(),
             userAuthID: existingAuth?.userAuthID ?? await this.userService.generateUserAuthID(),
-            name: user?.userName ?? '',
-            surname: user?.Surname ?? '',
+            Name: user?.userName ?? '',
+            Surname: user?.Surname ?? '',
             email: email ?? '',
             userRefID: userRefID ?? '',
+            encryptionKey: existingAuth?.encryptionKey ?? '',
         };
         const authorisation = user && email && !existingAuth
             ? await this.authService.createAuth(createAuthModel)

@@ -36,11 +36,11 @@ export class AuthCreateDto {
 
   @IsString()
   @IsNotEmpty()
-  readonly name!: string;
+  readonly Name!: string;
 
   @IsString()
   @IsNotEmpty()
-  readonly surname!: string;
+  readonly Surname!: string;
 
   @IsEmail()
   @IsNotEmpty()
@@ -49,4 +49,8 @@ export class AuthCreateDto {
   @IsString()
   @IsNotEmpty()
   readonly userRefID!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  readonly encryptionKey!: string;
 }

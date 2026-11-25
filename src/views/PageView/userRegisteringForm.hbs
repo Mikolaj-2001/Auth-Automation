@@ -13,6 +13,10 @@
         </div>
         {{/if}}
 
+        <div id="authIDDetails">
+            
+        </div>
+
         <form action="/user/register" method="POST" id="registerForm" class="modern-form">
             <div class="form-row-modern">
                 <div class="form-group-modern">
@@ -62,12 +66,10 @@
                 </label>
                 <input type="password" name="confirmPassword" id="confirmPassword"
                     class="form-control form-control-modern" required placeholder="Confirm your password">
-                {{#if error}}
-                <small class="form-text-error">
+                <small class="form-text-helper">
                     <i class="bi bi-info-circle"></i> Password must contain at least 8 characters,
                     including uppercase, lowercase, number, and special character.
                 </small>
-                {{/if}}
             </div>
 
             <div class="form-actions-modern">
